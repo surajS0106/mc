@@ -1,0 +1,62 @@
+<title>my-code · original logo</title>
+<style>
+  :root{ --bg:#f4f1ec; --card:#fff; --ink:#1b1a18; --muted:#6b6560; --line:#e3ddd3; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#191817; --card:#211f1d; --ink:#f3f0e9; --muted:#9a938a; --line:#312e2b; } }
+  :root[data-theme="light"]{ --bg:#f4f1ec;--card:#fff;--ink:#1b1a18;--muted:#6b6560;--line:#e3ddd3; }
+  :root[data-theme="dark"]{ --bg:#191817;--card:#211f1d;--ink:#f3f0e9;--muted:#9a938a;--line:#312e2b; }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;padding:56px 24px}
+  h1{font-size:24px;margin:0} p.sub{color:var(--muted);margin:0;font-size:15px}
+  .hero{display:flex;align-items:center;gap:44px;flex-wrap:wrap;justify-content:center}
+  .sizes{display:flex;align-items:flex-end;gap:26px;flex-wrap:wrap;justify-content:center}
+  .swatch{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .swatch small{color:var(--muted);font-size:12px}
+  .onlight,.ondark{padding:20px;border-radius:18px;border:1px solid var(--line)}
+  .onlight{background:#f4f1ec} .ondark{background:#111}
+</style>
+
+<header style="text-align:center">
+  <h1>my-code — original logo</h1>
+  <p class="sub">Chrome sphere · single stylized eye · red star. Shown at icon and small sizes, on light and dark.</p>
+</header>
+
+<div class="hero">
+  <div class="swatch"><div id="big"></div><small>128 · app tile</small></div>
+  <div class="swatch onlight"><div id="l64"></div><small style="color:#6b6560">64 · light</small></div>
+  <div class="swatch ondark"><div id="d64"></div><small style="color:#9a938a">64 · dark</small></div>
+</div>
+
+<div class="sizes">
+  <div class="swatch"><div id="s48"></div><small>48</small></div>
+  <div class="swatch"><div id="s32"></div><small>32 · title bar</small></div>
+  <div class="swatch"><div id="s20"></div><small>20</small></div>
+  <div class="swatch"><div id="s16"></div><small>16 · favicon</small></div>
+</div>
+
+<script>
+function logo(size){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="red" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ee3325"/><stop offset="100%" stop-color="#bf160e"/></linearGradient>
+      <radialGradient id="chrome" cx="40%" cy="36%" r="72%"><stop offset="0%" stop-color="#ffffff"/><stop offset="38%" stop-color="#d9dde1"/><stop offset="72%" stop-color="#9aa1a9"/><stop offset="100%" stop-color="#646b73"/></radialGradient>
+    </defs>
+    <rect width="120" height="120" rx="28" fill="#1b1a18"/>
+    <g fill="url(#red)" stroke="#8f0f09" stroke-width="1.5" stroke-linejoin="round">
+      <path d="M41 8 L59 55 L28 50 Z"/><path d="M79 8 L61 55 L92 50 Z"/>
+      <path d="M12 102 L55 66 L62 86 Z"/><path d="M108 102 L65 66 L58 86 Z"/>
+    </g>
+    <circle cx="60" cy="60" r="31" fill="url(#chrome)" stroke="#565c64" stroke-width="1"/>
+    <ellipse cx="49" cy="47" rx="15" ry="10" fill="#ffffff" opacity="0.55"/>
+    <g transform="rotate(-16 60 58)">
+      <path d="M43 59 Q61 43 80 57 Q61 69 43 59 Z" fill="#0e0d0c"/>
+      <circle cx="63" cy="57" r="9" fill="#17130f"/>
+      <circle cx="66" cy="55" r="3.2" fill="#eafffb"/>
+      <path d="M80 57 q7 -1 12 -5" stroke="#0e0d0c" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      <path d="M45 50 Q62 39 82 50" stroke="#0e0d0c" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    </g>
+  </svg>`;
+}
+const set=(id,s)=>document.getElementById(id).innerHTML=logo(s);
+set("big",128); set("l64",64); set("d64",64); set("s48",48); set("s32",32); set("s20",20); set("s16",16);
+</script>

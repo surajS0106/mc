@@ -1,0 +1,76 @@
+<title>my-code · accent color options</title>
+<style>
+  body{margin:0;background:#191817;color:#f3f0e9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:40px 24px 72px}
+  header{max-width:1080px;margin:0 auto 24px} h1{font-size:24px;margin:0 0 6px}
+  p.sub{color:#9a938a;margin:0;font-size:15px;line-height:1.5}
+  .grid{max-width:1080px;margin:0 auto;display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .card{background:#211f1d;border:1px solid #312e2b;border-radius:16px;padding:18px;position:relative}
+  .num{position:absolute;top:14px;right:14px;font-size:12px;font-weight:700;color:#fff;border-radius:999px;width:24px;height:24px;display:grid;place-items:center}
+  .name{font-weight:650;font-size:15px;margin-bottom:2px} .hex{color:#9a938a;font-size:12px;font-family:ui-monospace,monospace;margin-bottom:14px}
+  .demo{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .swatch{width:40px;height:40px;border-radius:10px;flex:0 0 auto}
+  .btn{border:none;border-radius:9px;color:#fff;font-size:13px;padding:8px 16px;font-weight:550}
+  .nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+  .nav div{font-size:13px;padding:7px 10px;border-radius:8px;color:#9a938a}
+  .nav div.on{color:#f3f0e9}
+  .chip{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:3px 9px}
+  a.link{font-size:13px;text-decoration:underline}
+  .bubble{align-self:flex-end;color:#fff;border-radius:14px;padding:8px 13px;font-size:13px;max-width:70%}
+  .logo-row{display:flex;gap:14px;align-items:center;margin-top:8px}
+  footer{max-width:1080px;margin:30px auto 0;color:#9a938a;font-size:13.5px;text-align:center}
+</style>
+
+<header>
+  <h1>my-code — accent color options 🎨</h1>
+  <p class="sub">Each card previews the accent on real UI: primary button, active sidebar item, link, "new" chip, a user bubble, and the logo recolored. Tell me a number — and whether to recolor the logo too or keep the terracotta dog.</p>
+</header>
+<div class="grid" id="grid"></div>
+<footer>Pick a number. I'll set the app's <code>--accent</code> (dark + light) and, if you want, retint the logo.</footer>
+
+<script>
+const opts=[
+ {name:"Cyan / Teal", d:"#19c2c2", l:"#0ca6a6"},
+ {name:"Violet", d:"#8b7ff5", l:"#6d5fe0"},
+ {name:"Emerald", d:"#3fb950", l:"#2ea043"},
+ {name:"Sky blue", d:"#4a9eff", l:"#2f80ed"},
+ {name:"Blurple / Indigo", d:"#6472f5", l:"#4f5fe8"},
+ {name:"Rose", d:"#f2618f", l:"#e0417a"},
+ {name:"Amber", d:"#f0a53e", l:"#e08e1f"},
+ {name:"Lime", d:"#a6d84a", l:"#8bbf2f"},
+];
+// dog logo with a swappable head color
+function dog(head){
+  return `<svg width="46" height="46" viewBox="0 0 120 120">
+    <rect width="120" height="120" rx="28" fill="#211f1d"/>
+    <path d="M24 60 C 24 24, 96 24, 96 60" stroke="#464b52" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M42 33 L36 21 L50 30 Z" fill="#5f666e"/><path d="M78 33 L84 21 L70 30 Z" fill="#5f666e"/>
+    <rect x="33" y="31" width="54" height="60" rx="24" fill="${head}"/>
+    <rect x="37" y="50" width="46" height="19" rx="9.5" fill="#141210"/>
+    <circle cx="50" cy="59.5" r="4.6" fill="#37dbd0"/><circle cx="70" cy="59.5" r="4.6" fill="#37dbd0"/>
+    <rect x="15" y="48" width="20" height="30" rx="9" fill="#3d424a"/><rect x="85" y="48" width="20" height="30" rx="9" fill="#3d424a"/>
+  </svg>`;
+}
+const grid=document.getElementById("grid");
+opts.forEach((o,i)=>{
+  const c=document.createElement("div"); c.className="card";
+  c.innerHTML=`
+    <span class="num" style="background:${o.d}">${i+1}</span>
+    <div class="name">${i+1}. ${o.name}</div>
+    <div class="hex">${o.d} · ${o.l}</div>
+    <div class="demo">
+      <div class="swatch" style="background:${o.d}"></div>
+      <button class="btn" style="background:${o.d}">Connect</button>
+      <span class="chip" style="background:${o.d}">NEW</span>
+      <a class="link" style="color:${o.d}">a link</a>
+    </div>
+    <div class="demo">
+      <div class="bubble" style="background:${o.d}">how does auth work?</div>
+    </div>
+    <div class="nav">
+      <div class="on" style="background:#2a2724;border-left:3px solid ${o.d}">Models &amp; Providers</div>
+      <div>Permissions</div>
+    </div>
+    <div class="logo-row">${dog(o.d)}<span style="color:#9a938a;font-size:12px">logo recolored → ${o.name}</span></div>`;
+  grid.appendChild(c);
+});
+</script>

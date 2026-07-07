@@ -1,0 +1,105 @@
+<title>my-code · headphone cyber-dog — eye variations</title>
+<style>
+  :root{ --bg:#f4f1ec; --card:#fff; --ink:#1b1a18; --muted:#6b6560; --line:#e3ddd3; --accent:#c05e3d; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#191817;--card:#211f1d;--ink:#f3f0e9;--muted:#9a938a;--line:#312e2b;--accent:#d97757; } }
+  :root[data-theme="light"]{ --bg:#f4f1ec;--card:#fff;--ink:#1b1a18;--muted:#6b6560;--line:#e3ddd3;--accent:#c05e3d; }
+  :root[data-theme="dark"]{ --bg:#191817;--card:#211f1d;--ink:#f3f0e9;--muted:#9a938a;--line:#312e2b;--accent:#d97757; }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:40px 24px 72px}
+  header{max-width:1080px;margin:0 auto 26px} h1{font-size:24px;margin:0 0 6px}
+  p.sub{color:var(--muted);margin:0;font-size:15px;line-height:1.5}
+  .grid{max-width:1080px;margin:0 auto;display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;
+    display:flex;flex-direction:column;align-items:center;gap:12px;transition:transform .16s,box-shadow .16s,border-color .16s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.18);border-color:var(--accent)}
+  .cardwrap{position:relative;width:100%;display:flex;justify-content:center}
+  .tile{width:128px;height:128px;display:block}
+  .num{position:absolute;top:0;left:12px;font-size:12px;font-weight:700;color:#fff;background:var(--accent);
+    border-radius:999px;width:24px;height:24px;display:grid;place-items:center}
+  .name{font-weight:650;font-size:14.5px} .desc{color:var(--muted);font-size:12px;text-align:center;line-height:1.4;min-height:30px}
+  .lit{filter:drop-shadow(0 0 3px #37dbd0)}
+  footer{max-width:1080px;margin:32px auto 0;color:var(--muted);font-size:13.5px;text-align:center}
+</style>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e2895f"/><stop offset="100%" stop-color="#bf5c3b"/></linearGradient>
+</defs></svg>
+
+<header>
+  <h1>my-code — headphone cyber-dog · eye variations 🎧</h1>
+  <p class="sub">Same headphones + antennae, terracotta head. Varying eye style (round / almond / goggles / happy / LED / pixel), plus extras: eyebrows, a snout, cheeks, and a rounder head. Pick a number, or mix ("eyes of 5 + snout of 8").</p>
+</header>
+<div class="grid" id="grid"></div>
+<footer>Tell me a number, or combine features. I'll build the winner as the real SVG + icon set.</footer>
+
+<script>
+const CY="#37dbd0", DK="#141210", WH="#eafffb", STEEL="#5f666e";
+const tile=`<rect width="120" height="120" rx="28" fill="#1b1a18"/>`;
+
+function base(head){
+  const h = head==='round'
+    ? `<circle cx="60" cy="61" r="30" fill="url(#fur)"/>`
+    : `<rect x="33" y="31" width="54" height="60" rx="24" fill="url(#fur)"/>`;
+  return tile
+    + `<path d="M24 60 C 24 24, 96 24, 96 60" stroke="#464b52" stroke-width="8" fill="none" stroke-linecap="round"/>`
+    + `<path d="M24 60 C 24 26, 96 26, 96 60" stroke="#767d86" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
+    + `<path d="M42 33 L36 21 L50 30 Z" fill="${STEEL}"/><path d="M78 33 L84 21 L70 30 Z" fill="${STEEL}"/>`
+    + h;
+}
+function cups(){
+  return `<rect x="15" y="48" width="20" height="30" rx="9" fill="#3d424a"/><rect x="19" y="52" width="12" height="22" rx="6" fill="#22262b"/>`
+    + `<rect x="85" y="48" width="20" height="30" rx="9" fill="#3d424a"/><rect x="89" y="52" width="12" height="22" rx="6" fill="#22262b"/>`
+    + `<g class="lit"><rect x="22" y="61" width="6" height="4" rx="2" fill="${CY}"/><rect x="92" y="61" width="6" height="4" rx="2" fill="${CY}"/></g>`;
+}
+const roundEye=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${DK}"/>`;
+const iris=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${CY}"/>`;
+const catch_=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${WH}"/>`;
+
+function face(type){
+  switch(type){
+    case 'round': return roundEye(50,59,8.5)+roundEye(70,59,8.5)
+      +`<g class="lit">${iris(50,59,4.2)}${iris(70,59,4.2)}</g>`+catch_(48,57,1.6)+catch_(68,57,1.6);
+    case 'almond': return `<path d="M41 59 Q50 52 59 59 Q50 65 41 59 Z" fill="${DK}"/><path d="M61 59 Q70 52 79 59 Q70 65 61 59 Z" fill="${DK}"/>`
+      +`<g class="lit">${iris(50,59,3.6)}${iris(70,59,3.6)}</g>`+catch_(48.5,57.5,1.3)+catch_(68.5,57.5,1.3)
+      +`<path d="M42 51 Q50 48 58 51" stroke="#7a3a24" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M62 51 Q70 48 78 51" stroke="#7a3a24" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+    case 'goggles': return `<rect x="37" y="50" width="46" height="19" rx="9.5" fill="${DK}"/><rect x="37" y="50" width="46" height="19" rx="9.5" fill="none" stroke="#2a2724" stroke-width="1"/>`
+      +`<g class="lit">${iris(50,59.5,4.6)}${iris(70,59.5,4.6)}</g>`+catch_(48,57.5,1.5)+catch_(68,57.5,1.5);
+    case 'kawaii': return roundEye(49,60,11)+roundEye(71,60,11)
+      +`<g class="lit">${iris(50,61,4.6)}${iris(72,61,4.6)}</g>`+catch_(46,56,3.2)+catch_(68,56,3.2);
+    case 'happy': return `<g class="lit"><path d="M43 61 Q50 52 57 61" stroke="${CY}" stroke-width="4.2" fill="none" stroke-linecap="round"/><path d="M63 61 Q70 52 77 61" stroke="${CY}" stroke-width="4.2" fill="none" stroke-linecap="round"/></g>`;
+    case 'fierce': return `<path d="M42 52 L58 57" stroke="#7a3a24" stroke-width="3" stroke-linecap="round"/><path d="M78 52 L62 57" stroke="#7a3a24" stroke-width="3" stroke-linecap="round"/>`
+      + roundEye(50,62,7)+roundEye(70,62,7)+`<g class="lit">${iris(50,62,3.4)}${iris(70,62,3.4)}</g>`;
+    case 'led': return roundEye(50,60,7.5)+roundEye(70,60,7.5)+`<g class="lit"><rect x="47.5" y="54" width="5" height="13" rx="2.5" fill="${CY}"/><rect x="67.5" y="54" width="5" height="13" rx="2.5" fill="${CY}"/></g>`;
+    case 'snout': return roundEye(49,56,7.5)+roundEye(71,56,7.5)+`<g class="lit">${iris(49,56,3.8)}${iris(71,56,3.8)}</g>`+catch_(47,54,1.4)+catch_(69,54,1.4)
+      +`<path d="M54 71 L66 71 L60 78 Z" fill="${DK}"/>`;
+    case 'pixel': return `<rect x="43" y="53" width="13" height="13" fill="${DK}"/><rect x="64" y="53" width="13" height="13" fill="${DK}"/>`
+      +`<g class="lit"><rect x="47" y="57" width="6" height="6" fill="${CY}"/><rect x="68" y="57" width="6" height="6" fill="${CY}"/></g>`;
+    case 'cheeky': return `<ellipse cx="43" cy="70" rx="6" ry="4" fill="#f0a07d" opacity="0.55"/><ellipse cx="77" cy="70" rx="6" ry="4" fill="#f0a07d" opacity="0.55"/>`
+      + roundEye(50,58,8)+roundEye(70,58,8)+`<g class="lit">${iris(50,58,4)}${iris(70,58,4)}</g>`+catch_(48,56,1.5)+catch_(68,56,1.5)
+      +`<path d="M43 50 Q50 47 57 50" stroke="#7a3a24" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M63 50 Q70 47 77 50" stroke="#7a3a24" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+  }
+}
+function build(head,type){ return base(head)+face(type)+cups(); }
+
+const presets=[
+ {name:"Round Glow", desc:"Baseline — two round glowing eyes.", head:'squircle', type:'round'},
+ {name:"Focused", desc:"Almond eyes + subtle eyebrows. Sharper, alert.", head:'squircle', type:'almond'},
+ {name:"Goggles", desc:"Dark goggle band with two lit lenses. Techy.", head:'squircle', type:'goggles'},
+ {name:"Kawaii", desc:"Big round eyes, big catchlights, rounder head. Cute.", head:'round', type:'kawaii'},
+ {name:"Happy", desc:"Curved ^ ^ eyes, rounder head. Cheerful.", head:'round', type:'happy'},
+ {name:"Fierce", desc:"Angled brows + small sharp eyes. Determined.", head:'squircle', type:'fierce'},
+ {name:"LED Bars", desc:"Vertical LED-bar eyes. Robotic.", head:'squircle', type:'led'},
+ {name:"Pup Snout", desc:"Round eyes + a small snout. More dog.", head:'round', type:'snout'},
+ {name:"Pixel", desc:"Square pixel eyes. Retro-tech.", head:'squircle', type:'pixel'},
+ {name:"Cheeky", desc:"Round eyes, brows + rosy cheeks, round head. Warm.", head:'round', type:'cheeky'},
+];
+
+const grid=document.getElementById("grid");
+presets.forEach((p,i)=>{
+  const c=document.createElement("div"); c.className="card";
+  c.innerHTML=`<div class="cardwrap"><span class="num">${i+1}</span>
+    <svg class="tile" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${build(p.head,p.type)}</svg></div>
+    <div class="name">${i+1}. ${p.name}</div><div class="desc">${p.desc}</div>`;
+  grid.appendChild(c);
+});
+</script>

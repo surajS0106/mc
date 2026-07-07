@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "watch:extension",
+      "type": "shell",
+      "command": "node esbuild.mjs --watch",
+      "options": { "cwd": "${workspaceFolder}/extension" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "esbuild",
+        "fileLocation": "absolute",
+        "pattern": {
+          "regexp": "^([^\\s].*)\\((\\d+|\\d+,\\d+|\\d+,\\d+,\\d+,\\d+)\\):\\s+(error|warning):\\s+(.*)$",
+          "file": 1,
+          "location": 2,
+          "severity": 3,
+          "message": 4
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "\\[esbuild\\] watching|^\\[watch\\] build started",
+          "endsPattern": "\\[esbuild\\] done|^\\[watch\\] build finished"
+        }
+      },
+      "presentation": { "reveal": "silent", "panel": "shared" }
+    },
+    {
+      "label": "build:extension",
+      "type": "shell",
+      "command": "node esbuild.mjs",
+      "options": { "cwd": "${workspaceFolder}/extension" },
+      "problemMatcher": []
+    }
+  ]
+}

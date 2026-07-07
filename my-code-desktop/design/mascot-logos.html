@@ -1,0 +1,93 @@
+<title>my-code · two-eyed mascot concepts</title>
+<style>
+  :root{ --bg:#f4f1ec; --card:#fff; --ink:#1b1a18; --muted:#6b6560; --line:#e3ddd3; --accent:#c05e3d; }
+  @media (prefers-color-scheme: dark){ :root{ --bg:#191817; --card:#211f1d; --ink:#f3f0e9; --muted:#9a938a; --line:#312e2b; --accent:#d97757; } }
+  :root[data-theme="light"]{ --bg:#f4f1ec;--card:#fff;--ink:#1b1a18;--muted:#6b6560;--line:#e3ddd3;--accent:#c05e3d; }
+  :root[data-theme="dark"]{ --bg:#191817;--card:#211f1d;--ink:#f3f0e9;--muted:#9a938a;--line:#312e2b;--accent:#d97757; }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;padding:40px 24px 72px}
+  header{max-width:1080px;margin:0 auto 26px} h1{font-size:25px;margin:0 0 6px}
+  p.sub{color:var(--muted);margin:0;font-size:15px;line-height:1.5}
+  .grid{max-width:1080px;margin:0 auto;display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;
+    display:flex;flex-direction:column;align-items:center;gap:12px;transition:transform .16s,box-shadow .16s,border-color .16s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.18);border-color:var(--accent)}
+  .cardwrap{position:relative;width:100%;display:flex;justify-content:center}
+  .tile{width:128px;height:128px;display:block}
+  .num{position:absolute;top:0;left:12px;font-size:12px;font-weight:700;color:#fff;background:var(--accent);
+    border-radius:999px;width:24px;height:24px;display:grid;place-items:center}
+  .name{font-weight:650;font-size:14.5px} .desc{color:var(--muted);font-size:12px;text-align:center;line-height:1.4;min-height:30px}
+  .lit{filter:drop-shadow(0 0 3px #37dbd0)}
+  footer{max-width:1080px;margin:32px auto 0;color:var(--muted);font-size:13.5px;text-align:center}
+</style>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <radialGradient id="chrome" cx="40%" cy="34%" r="72%">
+    <stop offset="0%" stop-color="#ffffff"/><stop offset="38%" stop-color="#d9dde1"/>
+    <stop offset="72%" stop-color="#9aa1a9"/><stop offset="100%" stop-color="#646b73"/>
+  </radialGradient>
+  <radialGradient id="terra" cx="42%" cy="34%" r="74%">
+    <stop offset="0%" stop-color="#eb9871"/><stop offset="100%" stop-color="#bd5b39"/>
+  </radialGradient>
+</defs></svg>
+
+<header>
+  <h1>my-code — two-eyed mascot concepts 👀</h1>
+  <p class="sub">Two eyes, kept ears, added eyebrows, no bottom legs — variations on sphere finish (chrome / terracotta / dark), ear style (cat / fin / round), eye style, and brow mood. Pick a number (or mix-and-match: "the eyes of 3 with the ears of 6").</p>
+</header>
+<div class="grid" id="grid"></div>
+<footer>Tell me a number, or combine features across a few. I'll then build it as the real SVG + icon set.</footer>
+
+<script>
+const RED="#e12a1e", REDK="#8f0f09", TERRA="#c96442", TERRAK="#a94e30", STEEL="#5f666e", CY="#37dbd0", DK="#141210";
+
+function sphere(kind){
+  if(kind==='chrome') return `<circle cx="60" cy="64" r="30" fill="url(#chrome)" stroke="#565c64" stroke-width="1"/><ellipse cx="50" cy="52" rx="14" ry="9" fill="#fff" opacity="0.5"/>`;
+  if(kind==='terra')  return `<circle cx="60" cy="64" r="30" fill="url(#terra)"/><ellipse cx="50" cy="52" rx="13" ry="8" fill="#fff" opacity="0.16"/>`;
+  return `<circle cx="60" cy="64" r="30" fill="#2a2724" stroke="#3a3633" stroke-width="1"/>`;
+}
+function ears(style,color){
+  if(style==='cat')  return `<path d="M40 12 L54 50 L30 46 Z" fill="${color}"/><path d="M80 12 L66 50 L90 46 Z" fill="${color}"/>`;
+  if(style==='tall') return `<path d="M40 6 L53 50 L32 46 Z" fill="${color}"/><path d="M80 6 L67 50 L88 46 Z" fill="${color}"/>`;
+  if(style==='fin')  return `<path d="M45 34 L38 15 L55 30 Z" fill="${color}"/><path d="M75 34 L82 15 L65 30 Z" fill="${color}"/>`;
+  return `<circle cx="42" cy="28" r="11" fill="${color}"/><circle cx="78" cy="28" r="11" fill="${color}"/>`; // round
+}
+function eye(x,shape,color,glow){
+  const g=glow?' class="lit"':'';
+  if(shape==='round')  return `<circle cx="${x}" cy="62" r="8" fill="#fff"/><circle cx="${x+1}" cy="63" r="4.6" fill="${color}"${g}/><circle cx="${x-1}" cy="60" r="1.6" fill="#fff"/>`;
+  if(shape==='almond') return `<path d="M${x-9} 62 Q${x} 55 ${x+9} 62 Q${x} 69 ${x-9} 62 Z" fill="#fff"/><circle cx="${x}" cy="62.5" r="4" fill="${color}"${g}/><circle cx="${x-1.5}" cy="61" r="1.3" fill="#fff"/>`;
+  return `<circle cx="${x}" cy="62" r="6" fill="${color}"${g}/><circle cx="${x-2}" cy="60" r="2" fill="#eafffb"/>`; // dot
+}
+function eyes(shape,color,glow){ return eye(52,shape,color,glow)+eye(68,shape,color,glow); }
+function brows(style,color){
+  if(style==='angry')  return `<path d="M43 51 L53 55" stroke="${color}" stroke-width="3" stroke-linecap="round"/><path d="M77 51 L67 55" stroke="${color}" stroke-width="3" stroke-linecap="round"/>`;
+  if(style==='raised') return `<path d="M45 52 Q52 47 58 51" stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M75 52 Q68 47 62 51" stroke="${color}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  return `<path d="M44 51 L54 50" stroke="${color}" stroke-width="3" stroke-linecap="round"/><path d="M76 51 L66 50" stroke="${color}" stroke-width="3" stroke-linecap="round"/>`; // flat
+}
+const tile = `<rect width="120" height="120" rx="28" fill="#1b1a18"/>`;
+function build(o){ return tile + ears(o.ears,o.earC) + sphere(o.sphere) + eyes(o.eyeShape,o.eyeC,o.glow) + brows(o.brow,o.browC); }
+
+const presets = [
+ {name:"Chrome Fierce", desc:"Chrome sphere, red cat ears, sharp almond eyes, angry brows.", o:{sphere:'chrome',ears:'cat',earC:RED,eyeShape:'almond',eyeC:DK,glow:0,brow:'angry',browC:REDK}},
+ {name:"Chrome Buddy", desc:"Chrome, red cat ears, big round eyes, raised friendly brows.", o:{sphere:'chrome',ears:'cat',earC:RED,eyeShape:'round',eyeC:DK,glow:0,brow:'raised',browC:'#2a2724'}},
+ {name:"Chrome Classic", desc:"Closest to your ref, but two eyes. Round dark eyes, thin brows.", o:{sphere:'chrome',ears:'cat',earC:RED,eyeShape:'dot',eyeC:DK,glow:0,brow:'flat',browC:'#2a2724'}},
+ {name:"Cyber Eyes", desc:"Chrome, steel fin ears, glowing cyan eyes, angry steel brows.", o:{sphere:'chrome',ears:'fin',earC:STEEL,eyeShape:'dot',eyeC:CY,glow:1,brow:'angry',browC:STEEL}},
+ {name:"Red Fox", desc:"Chrome, tall red ears, almond eyes, angled red brows.", o:{sphere:'chrome',ears:'tall',earC:RED,eyeShape:'almond',eyeC:DK,glow:0,brow:'angry',browC:REDK}},
+ {name:"Steel Sentinel", desc:"Chrome, steel fin ears, cyan almond eyes, flat brows.", o:{sphere:'chrome',ears:'fin',earC:STEEL,eyeShape:'almond',eyeC:CY,glow:1,brow:'flat',browC:STEEL}},
+ {name:"Terracotta Cat", desc:"Terracotta sphere + ears (on-brand), dark eyes, flat brows.", o:{sphere:'terra',ears:'cat',earC:TERRAK,eyeShape:'dot',eyeC:DK,glow:0,brow:'flat',browC:'#7a3a24'}},
+ {name:"Clay Pup", desc:"Terracotta sphere, steel fin ears, round eyes, raised brows.", o:{sphere:'terra',ears:'fin',earC:STEEL,eyeShape:'round',eyeC:DK,glow:0,brow:'raised',browC:TERRAK}},
+ {name:"Neon Cat", desc:"Dark sphere, red cat ears, glowing cyan round eyes, angry brows.", o:{sphere:'dark',ears:'cat',earC:RED,eyeShape:'round',eyeC:CY,glow:1,brow:'angry',browC:RED}},
+ {name:"Round-ear Bot", desc:"Chrome, rounded ears, cyan dot eyes, raised brows. Softer.", o:{sphere:'chrome',ears:'round',earC:STEEL,eyeShape:'dot',eyeC:CY,glow:1,brow:'raised',browC:STEEL}},
+ {name:"Terra Fierce", desc:"Terracotta sphere, red cat ears, almond eyes, angry brows.", o:{sphere:'terra',ears:'cat',earC:RED,eyeShape:'almond',eyeC:DK,glow:0,brow:'angry',browC:REDK}},
+ {name:"Chrome Cyan Cat", desc:"Chrome, red cat ears, glowing cyan almond eyes, flat brows.", o:{sphere:'chrome',ears:'cat',earC:RED,eyeShape:'almond',eyeC:CY,glow:1,brow:'flat',browC:'#2a2724'}},
+];
+
+const grid=document.getElementById("grid");
+presets.forEach((p,i)=>{
+  const c=document.createElement("div"); c.className="card";
+  c.innerHTML=`<div class="cardwrap"><span class="num">${i+1}</span>
+    <svg class="tile" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">${build(p.o)}</svg></div>
+    <div class="name">${i+1}. ${p.name}</div><div class="desc">${p.desc}</div>`;
+  grid.appendChild(c);
+});
+</script>

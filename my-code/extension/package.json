@@ -1,0 +1,175 @@
+{
+  "name": "reno",
+  "displayName": "reno",
+  "description": "Coding agent powered by Ollama, in your editor.",
+  "version": "0.1.0",
+  "publisher": "reno",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "categories": [
+    "Other",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "ai",
+    "agent",
+    "ollama",
+    "coding",
+    "chat",
+    "llm",
+    "local"
+  ],
+  "galleryBanner": {
+    "color": "#0d1117",
+    "theme": "dark"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "reno",
+          "title": "reno",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "reno": [
+        {
+          "type": "webview",
+          "id": "reno.chatView",
+          "name": "Chat"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "reno.newChat",
+        "title": "reno: New Chat"
+      },
+      {
+        "command": "reno.cancelTurn",
+        "title": "reno: Cancel Current Turn"
+      },
+      {
+        "command": "reno.pickModel",
+        "title": "reno: Pick Model"
+      },
+      {
+        "command": "reno.useSelection",
+        "title": "reno: Send Selection to Chat"
+      },
+      {
+        "command": "reno.explainSelection",
+        "title": "reno: Explain Selection"
+      },
+      {
+        "command": "reno.setOllamaApiKey",
+        "title": "reno: Set Ollama Cloud API Key"
+      },
+      {
+        "command": "reno.clearOllamaApiKey",
+        "title": "reno: Clear Ollama Cloud API Key"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "reno.useSelection",
+          "when": "editorHasSelection",
+          "group": "reno@1"
+        },
+        {
+          "command": "reno.explainSelection",
+          "when": "editorHasSelection",
+          "group": "reno@2"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "reno.useSelection",
+        "key": "ctrl+l",
+        "mac": "cmd+l",
+        "when": "editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "reno",
+      "properties": {
+        "reno.provider": {
+          "type": "string",
+          "enum": [
+            "ollama"
+          ],
+          "default": "ollama",
+          "description": "Inference provider."
+        },
+        "reno.model": {
+          "type": "string",
+          "default": "qwen3-next:80b-cloud",
+          "description": "Model name. Leave blank to auto-pick the first installed model."
+        },
+        "reno.ollama.host": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama HTTP host."
+        },
+        "reno.ollama.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key (only for Ollama Cloud). Prefer the SecretStorage command for production use."
+        },
+        "reno.autoCompact": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically compact when context is near full."
+        },
+        "reno.permissionMode": {
+          "type": "string",
+          "enum": [
+            "normal",
+            "accept-edits",
+            "bypass"
+          ],
+          "default": "normal",
+          "markdownDescription": "How aggressive to be with permission prompts. `normal` asks for every edit. `accept-edits` auto-applies file edits. `bypass` allows everything (dangerous)."
+        },
+        "reno.customInstructions": {
+          "type": "string",
+          "default": "",
+          "editPresentation": "multilineText",
+          "description": "Custom instructions appended to the system prompt for every chat (your style, conventions, preferences)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "vscode:prepublish": "node esbuild.mjs --production",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "marked": "^18.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  }
+}
