@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
-import type { Mode } from "../../../electron/ipc";
+import type { Mode, SkillInfo } from "../../../electron/ipc";
 
 export interface ComposerProps {
   mode: Mode;
@@ -28,6 +28,30 @@ export function Composer({
 }: ComposerProps): React.ReactElement {
   const [text, setText] = useState("");
   const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  // ── / skills palette + @ file mentions ──
+  const [skills, setSkills] = useState<SkillInfo[]>([]);
+  const [files, setFiles] = useState<string[]>([]);
+  const slashM = /^\/([\w-]*)$/.exec(text);
+  const atM = /(?:^|\s)@([\w./\-]*)$/.exec(text);
+  const showSlash = !!slashM;
+  const showAt = !showSlash && !!atM;
+
+  useEffect(() => {
+    if (showSlash && skills.length === 0) void window.mycode.getSkills().then(setSkills).catch(() => {});
+  }, [showSlash, skills.length]);
+  useEffect(() => {
+    if (showAt && files.length === 0) void window.mycode.listProjectFiles().then(setFiles).catch(() => {});
+  }, [showAt, files.length]);
+
+  const skillHits = showSlash
+    ? skills.filter((s) => s.name.toLowerCase().includes(slashM![1].toLowerCase())).slice(0, 8)
+    : [];
+  const fileHits = showAt
+    ? files.filter((f) => f.toLowerCase().includes(atM![1].toLowerCase())).slice(0, 8)
+    : [];
+  const pickSkill = (name: string) => { setText(`/${name} `); ref.current?.focus(); };
+  const pickFile = (path: string) => { setText((t) => t.replace(/@[\w./\-]*$/, `@${path} `)); ref.current?.focus(); };
 
   // Prefill + focus when a starter chip seeds the input.
   useEffect(() => {
@@ -67,6 +91,27 @@ export function Composer({
 
   return (
     <div className={`composer-wrap composer-${variant}`}>
+      {showSlash && skillHits.length > 0 && (
+        <div className="cpop">
+          <div className="cpop-label">Skills &amp; commands</div>
+          {skillHits.map((s) => (
+            <button key={s.name} className="cpop-item" onMouseDown={(e) => { e.preventDefault(); pickSkill(s.name); }}>
+              <span className="cpop-cmd">/{s.name}</span>
+              <span className="cpop-desc">{s.description}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {showAt && fileHits.length > 0 && (
+        <div className="cpop">
+          <div className="cpop-label">Files</div>
+          {fileHits.map((f) => (
+            <button key={f} className="cpop-item" onMouseDown={(e) => { e.preventDefault(); pickFile(f); }}>
+              <span className="cpop-file">{f}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="composer">
         <textarea
           ref={ref}

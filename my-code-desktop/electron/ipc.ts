@@ -244,6 +244,7 @@ export const IPC = {
   setMode: "mc:set-mode",
   pickFolder: "mc:pick-folder",
   listSessions: "mc:list-sessions",
+  listProjectFiles: "mc:list-project-files",
   deleteSession: "mc:delete-session",
   renameSession: "mc:rename-session",
   resumeSession: "mc:resume-session",
@@ -295,6 +296,7 @@ export interface McApi {
   setMode(mode: Mode, cwd?: string): Promise<Bootstrap>;
   pickFolder(): Promise<string | null>;
   listSessions(): Promise<SessionMeta[]>;
+  listProjectFiles(): Promise<string[]>;
   deleteSession(id: string): Promise<void>;
   renameSession(id: string, title: string): Promise<void>;
   resumeSession(id: string): Promise<Bootstrap>;

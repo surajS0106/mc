@@ -17,6 +17,8 @@ import { PermissionModal } from "./components/PermissionModal";
 import { Settings } from "./components/Settings";
 import { Logo, type MascotMood } from "./components/Logo";
 import { Icon, type IconName } from "./components/Icon";
+import { TurnHud } from "./components/TurnHud";
+import { CommandPalette, type Command } from "./components/CommandPalette";
 import { applyAccent, applyAppearance } from "./theme";
 import type {
   Bootstrap,
@@ -40,10 +42,11 @@ export function App(): React.ReactElement {
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
   const [perm, setPerm] = useState<PendingPermission | null>(null);
   const [tokens, setTokens] = useState<{ prompt?: number; completion?: number }>({});
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [turnStart, setTurnStart] = useState<number | null>(null);
   const [convTitle, setConvTitle] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [cmdkOpen, setCmdkOpen] = useState(false);
   const [preferredName, setPreferredName] = useState<string>("");
   const [seed, setSeed] = useState<string>("");
   const seenPerm = useRef<Set<string>>(new Set());
@@ -82,6 +85,9 @@ export function App(): React.ReactElement {
         case "state":
           setMood(ev.state);
           setBusy(ev.state !== "idle");
+          return;
+        case "turn_start":
+          setTurnStart(Date.now());
           return;
         case "assistant_delta":
           setItems((xs) => appendAssistant(xs, ev.text));
@@ -152,6 +158,7 @@ export function App(): React.ReactElement {
       seenPerm.current.clear();
       setTokens({});
       setSeed("");
+      setTurnStart(null);
     });
   }, []);
 
@@ -159,6 +166,7 @@ export function App(): React.ReactElement {
   useEffect(() => {
     return window.mycode.onLoadTranscript((messages) => {
       setItems(historyToItems(messages));
+      setTurnStart(null);
     });
   }, []);
 
@@ -168,6 +176,35 @@ export function App(): React.ReactElement {
     setItems((xs) => [...xs, { kind: "user", id: newId(), text }]);
     void window.mycode.sendPrompt(text);
   };
+
+  // Stable message/error-card actions (kept stable so memoized rows don't churn).
+  const itemsRef = useRef<Item[]>(items);
+  itemsRef.current = items;
+  const onRetry = useCallback(() => {
+    const xs = itemsRef.current;
+    for (let i = xs.length - 1; i >= 0; i--) {
+      const it = xs[i];
+      if (it.kind === "user") {
+        setItems((p) => [...p, { kind: "user", id: newId(), text: it.text }]);
+        void window.mycode.sendPrompt(it.text);
+        return;
+      }
+    }
+  }, []);
+  const onEditMsg = useCallback((text: string) => setSeed(text + " "), []);
+  const onOpenSettingsCb = useCallback(() => setSettingsOpen(true), []);
+
+  // Ctrl/⌘+K toggles the command palette.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCmdkOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const answer = (choice: PermissionChoice) => {
     if (!perm) return;
@@ -219,15 +256,28 @@ export function App(): React.ReactElement {
     refreshSessions();
   };
 
+  const commands: Command[] = [
+    { id: "new", label: `New ${mode === "code" ? "task" : "chat"}`, run: () => void newChat() },
+    { id: "mode", label: mode === "code" ? "Switch to Chat mode" : "Switch to Code mode", run: () => void switchMode(mode === "code" ? "chat" : "code") },
+    { id: "settings", label: "Open settings", run: () => setSettingsOpen(true) },
+    ...sessions.slice(0, 6).map((s) => ({
+      id: s.id,
+      label: `Open: ${s.firstPrompt ?? s.id}`,
+      group: "Recent chats",
+      run: () => void resume(s.id),
+    })),
+  ];
+
   return (
     <div className="app">
       <TitleBar
         mode={mode}
         onMode={switchMode}
-        onToggleSidebar={() => setSidebarOpen((s) => !s)}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenCommand={() => setCmdkOpen(true)}
         mood={busy ? (mood as MascotMood) : undefined}
       />
-      <div className={`app-body ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
+      <div className="app-body">
         <Sidebar
           boot={boot}
           mode={mode}
@@ -244,6 +294,7 @@ export function App(): React.ReactElement {
           <div className="main-head">
             <span className="main-title">{convTitle ?? (mode === "code" ? "New task" : "New chat")}</span>
             {boot?.cwd && <span className="cwd-chip" title={boot.cwd}>{shorten(boot.cwd)}</span>}
+            <TurnHud busy={busy} tokens={tokens} turnStart={turnStart} />
           </div>
 
           <AnimatePresence mode="wait" initial={false}>
@@ -293,7 +344,16 @@ export function App(): React.ReactElement {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.7, delay: 0.04 }}
               >
-                <Transcript items={items} mode={mode} busy={busy} mood={mood} greeting={preferredName} />
+                <Transcript
+                  items={items}
+                  mode={mode}
+                  busy={busy}
+                  mood={mood}
+                  greeting={preferredName}
+                  onRetry={onRetry}
+                  onEdit={onEditMsg}
+                  onOpenSettings={onOpenSettingsCb}
+                />
                 <Composer
                   mode={mode}
                   model={boot?.model ?? "…"}
@@ -301,6 +361,7 @@ export function App(): React.ReactElement {
                   tokens={tokens}
                   contextLength={boot?.contextLength}
                   variant="docked"
+                  seed={seed}
                   onSubmit={submit}
                   onAbort={() => void window.mycode.abort()}
                 />
@@ -311,6 +372,7 @@ export function App(): React.ReactElement {
       </div>
       {perm && <PermissionModal req={perm} cwd={boot?.cwd ?? null} onAnswer={answer} />}
       {settingsOpen && <Settings onClose={() => { setSettingsOpen(false); syncAppearance(); }} />}
+      <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} commands={commands} />
     </div>
   );
 }

@@ -15,6 +15,30 @@ export interface SidebarProps {
   onOpenSettings: () => void;
 }
 
+/** Bucket sessions into Today / Yesterday / Last 7 days / Older by updatedAt. */
+function groupByDate(sessions: SessionMeta[]): [string, SessionMeta[]][] {
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const t0 = startOfToday.getTime();
+  const y0 = t0 - 86_400_000;
+  const w0 = t0 - 6 * 86_400_000;
+  const g: Record<string, SessionMeta[]> = { Today: [], Yesterday: [], "Last 7 days": [], Older: [] };
+  const sorted = [...sessions].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+  for (const s of sorted) {
+    const u = s.updatedAt ?? 0;
+    if (u >= t0) g.Today.push(s);
+    else if (u >= y0) g.Yesterday.push(s);
+    else if (u >= w0) g["Last 7 days"].push(s);
+    else g.Older.push(s);
+  }
+  return [
+    ["Today", g.Today],
+    ["Yesterday", g.Yesterday],
+    ["Last 7 days", g["Last 7 days"]],
+    ["Older", g.Older],
+  ];
+}
+
 export function Sidebar({
   boot,
   mode,
@@ -27,8 +51,22 @@ export function Sidebar({
   onDelete,
   onOpenSettings,
 }: SidebarProps): React.ReactElement {
+  const [query, setQuery] = useState("");
+  const filtered = sessions.filter((s) =>
+    (s.firstPrompt ?? s.id).toLowerCase().includes(query.trim().toLowerCase())
+  );
+  const groups = groupByDate(filtered);
+
   return (
     <aside className="sidebar">
+      <div className="side-search no-drag">
+        <Icon name="search" size={14} />
+        <input
+          placeholder="Search chats…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
       <button className="new-chat" onClick={onNewChat}>
         <span className="plus"><Icon name="plus" size={17} /></span> New {mode === "code" ? "task" : "chat"}
       </button>
@@ -40,20 +78,28 @@ export function Sidebar({
       </nav>
 
       <div className="recents">
-        <div className="recents-label">Recents</div>
         <div className="recents-list">
-          {sessions.length === 0 && <div className="recents-empty">No sessions yet</div>}
-          {sessions.map((s) => (
-            <RecentRow
-              key={s.id}
-              session={s}
-              active={!!activeTitle && s.firstPrompt === activeTitle}
-              loading={loadingId === s.id}
-              onResume={() => onResume(s.id)}
-              onRename={(title) => onRename(s.id, title)}
-              onDelete={() => onDelete(s.id)}
-            />
-          ))}
+          {filtered.length === 0 && (
+            <div className="recents-empty">{query ? "No matches" : "No sessions yet"}</div>
+          )}
+          {groups.map(([label, list]) =>
+            list.length === 0 ? null : (
+              <div key={label} className="recents-group">
+                <div className="recents-label">{label}</div>
+                {list.map((s) => (
+                  <RecentRow
+                    key={s.id}
+                    session={s}
+                    active={!!activeTitle && s.firstPrompt === activeTitle}
+                    loading={loadingId === s.id}
+                    onResume={() => onResume(s.id)}
+                    onRename={(title) => onRename(s.id, title)}
+                    onDelete={() => onDelete(s.id)}
+                  />
+                ))}
+              </div>
+            )
+          )}
         </div>
       </div>
 

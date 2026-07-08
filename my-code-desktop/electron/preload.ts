@@ -29,6 +29,7 @@ const api: McApi = {
     ipcRenderer.invoke(IPC.setMode, mode, cwd) as Promise<Bootstrap>,
   pickFolder: () => ipcRenderer.invoke(IPC.pickFolder) as Promise<string | null>,
   listSessions: () => ipcRenderer.invoke(IPC.listSessions) as Promise<SessionMeta[]>,
+  listProjectFiles: () => ipcRenderer.invoke(IPC.listProjectFiles) as Promise<string[]>,
   deleteSession: (id) => ipcRenderer.invoke(IPC.deleteSession, id) as Promise<void>,
   renameSession: (id, title) => ipcRenderer.invoke(IPC.renameSession, id, title) as Promise<void>,
   resumeSession: (id) => ipcRenderer.invoke(IPC.resumeSession, id) as Promise<Bootstrap>,

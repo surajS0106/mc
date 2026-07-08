@@ -207,6 +207,40 @@ async function deleteSession(cwd: string, id: string): Promise<void> {
   await saveTitle(id, null);
 }
 
+// Directories never worth surfacing in the @-file picker.
+const SKIP_DIRS = new Set([
+  "node_modules", ".git", "dist", "build", "out", ".next", "release",
+  ".vite", "coverage", ".turbo", "__pycache__", ".cache",
+]);
+
+/** Recursive, capped list of project files (POSIX-relative) for @-mentions. */
+async function listProjectFiles(cwd: string | null): Promise<string[]> {
+  if (!cwd) return [];
+  const results: string[] = [];
+  const CAP = 2000;
+  async function walk(dir: string, rel: string, depth: number): Promise<void> {
+    if (results.length >= CAP || depth > 8) return;
+    let entries;
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      if (results.length >= CAP) return;
+      const relPath = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isDirectory()) {
+        if (SKIP_DIRS.has(e.name) || e.name.startsWith(".")) continue;
+        await walk(join(dir, e.name), relPath, depth + 1);
+      } else if (e.isFile()) {
+        results.push(relPath);
+      }
+    }
+  }
+  await walk(cwd, "", 0);
+  return results.sort();
+}
+
 // ─── backend lifecycle ───
 
 async function startBackend(opts: { sessionId?: string } = {}): Promise<Bootstrap> {
@@ -414,6 +448,7 @@ function wireIpc(): void {
   });
 
   ipcMain.handle(IPC.listSessions, () => listSessionMetas(projectCwd));
+  ipcMain.handle(IPC.listProjectFiles, () => listProjectFiles(projectCwd));
   ipcMain.handle(IPC.deleteSession, (_e, id: string) => deleteSession(projectCwd, id));
   ipcMain.handle(IPC.renameSession, (_e, id: string, title: string) => saveTitle(id, title));
 

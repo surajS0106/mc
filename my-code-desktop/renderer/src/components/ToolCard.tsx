@@ -1,9 +1,25 @@
 import React, { useState } from "react";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 import type { Item } from "../transcript";
 import type { DiffPayload } from "../../../electron/ipc";
 
 type ToolItem = Extract<Item, { kind: "tool" }>;
+
+/** Map a tool name to a colored icon tile + whether its output is shell-like. */
+function toolVisual(name: string): { icon: IconName; cls: string } {
+  const n = name.toLowerCase();
+  if (/(bash|shell|powershell|pwsh|exec|command|run)/.test(n)) return { icon: "terminal", cls: "t-bash" };
+  if (/(read|view|cat|open)/.test(n)) return { icon: "eye", cls: "t-read" };
+  if (/(edit|write|multiedit|create|apply|patch)/.test(n)) return { icon: "edit", cls: "t-edit" };
+  if (/(grep|glob|search|find|ripgrep)/.test(n)) return { icon: "search", cls: "t-search" };
+  if (/(web|fetch|http|url|browse)/.test(n)) return { icon: "globe", cls: "t-web" };
+  if (/^task/.test(n)) return { icon: "check", cls: "t-task" };
+  if (/(skill|mcp)/.test(n)) return { icon: "puzzle", cls: "t-mcp" };
+  return { icon: "dot", cls: "t-default" };
+}
+function isShellTool(name: string): boolean {
+  return /(bash|shell|powershell|pwsh|exec|command)/i.test(name);
+}
 
 /** One-line summary of a tool's target (path / pattern / command). */
 function summarize(name: string, args: Record<string, unknown>): string {
@@ -20,12 +36,19 @@ function ToolCardImpl({ it }: { it: ToolItem }): React.ReactElement {
   const summary = summarize(it.name, it.args);
   const status = it.running ? "running" : it.isError ? "error" : "done";
   const hasResult = !it.diff && !!it.result;
+  const visual = toolVisual(it.name);
 
   return (
     <div className={`tool-card ${status} ${open ? "open" : ""}`}>
       <button className="tool-head" onClick={() => setOpen((o) => !o)}>
-        <span className="tool-glyph">
-          <Icon name={it.running ? "spinner" : it.isError ? "close" : "dot"} size={it.running ? 13 : 11} className={it.running ? "icon-spin" : undefined} />
+        <span className={`tool-tile ${visual.cls} ${it.isError ? "err" : ""}`}>
+          {it.running ? (
+            <Icon name="spinner" size={13} className="icon-spin" />
+          ) : it.isError ? (
+            <Icon name="close" size={12} />
+          ) : (
+            <Icon name={visual.icon} size={13} />
+          )}
         </span>
         <span className="tool-name">{it.name}</span>
         {summary && <span className="tool-summary">{summary}</span>}
@@ -49,7 +72,7 @@ function ToolCardImpl({ it }: { it: ToolItem }): React.ReactElement {
       {hasResult && (
         <div className="tool-wrap">
           <div className="tool-inner">
-            <pre className="tool-result">{it.result!.slice(0, 4000)}</pre>
+            <pre className={`tool-result ${isShellTool(it.name) ? "term" : ""}`}>{it.result!.slice(0, 4000)}</pre>
           </div>
         </div>
       )}
