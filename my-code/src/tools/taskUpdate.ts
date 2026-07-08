@@ -41,7 +41,11 @@ const inputSchema = z.object({
     .optional()
     .describe("Task IDs that must complete before this one can start"),
   metadata: z
-    .record(z.string(), z.unknown().nullable())
+    // NOTE: `z.unknown()` (not `.nullable()`) — `unknown` already accepts null at
+    // runtime, and `.nullable()` here serialized to `"type": [null, "null"]`, which
+    // Azure OpenAI rejects with HTTP 400 ("[None, 'null'] is not valid…"). The
+    // delete-by-null behaviour below is unchanged.
+    .record(z.string(), z.unknown())
     .optional()
     .describe("Metadata keys to merge into the task. Set a key to null to delete it."),
 });

@@ -175,14 +175,17 @@ button:focus-visible, .fld:focus-visible, textarea:focus-visible, input:focus-vi
 .composer-input:focus-visible, .composer-input:focus { outline: none; }
 
 .thread { max-width: 780px; margin: 0 auto; padding: 20px 24px 40px; }
-.row { display: flex; margin: 14px 0; }
+.row { display: flex; margin: 14px 0; animation: rowIn .34s cubic-bezier(.22,1,.36,1) both; }
+@keyframes rowIn { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
 .row.user { justify-content: flex-end; }
 .row.assistant { justify-content: flex-start; flex-direction: column; align-items: flex-start; }
 .bubble { border-radius: var(--radius); padding: 11px 15px; line-height: 1.6; max-width: 100%; }
 .user-bubble { background: var(--user-bubble); border: 1px solid var(--border); white-space: pre-wrap; max-width: 82%; }
 .assistant-bubble { background: transparent; padding-left: 2px; padding-right: 2px; }
 
-.caret { display: inline-block; width: 7px; height: 15px; background: var(--accent); margin-left: 2px; vertical-align: text-bottom; animation: blink 1s steps(2) infinite; }
+.caret { display: inline-block; width: 7px; height: 15px; margin-left: 2px; vertical-align: text-bottom; border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent)); box-shadow: 0 0 7px -1px var(--accent);
+  animation: blink 1.1s steps(2) infinite; }
 @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
 
 .working { display: flex; gap: 5px; padding: 8px 4px; }
@@ -199,8 +202,23 @@ button:focus-visible, .fld:focus-visible, textarea:focus-visible, input:focus-vi
 .thinking { width: 100%; }
 .thinking-head { background: none; border: none; color: var(--text-faint); font-size: 13px; padding: 4px 2px; display: flex; align-items: center; gap: 7px; }
 .thinking-head:hover { color: var(--text-dim); }
+.thinking-head .lab { transition: color .2s ease; }
+/* animated shimmer sweep on the label while the model is still thinking */
+.thinking-head.live .spark { animation: sparkPulse 1.6s ease-in-out infinite; }
+.thinking-head.live .lab {
+  background: linear-gradient(100deg, var(--text-faint) 35%, var(--accent-hover) 50%, var(--text-faint) 65%);
+  background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shimmer 2.1s linear infinite;
+}
+.thinking-head .chev { display: inline-flex; align-items: center; transition: transform .25s ease; }
+.thinking.open .thinking-head .chev { transform: rotate(180deg); }
 .spark { color: var(--accent); display: inline-flex; align-items: center; }
-.thinking-body { color: var(--text-dim); font-size: 13.5px; line-height: 1.6; padding: 8px 12px; margin: 4px 0; border-left: 2px solid var(--border); white-space: pre-wrap; }
+@keyframes sparkPulse { 0%,100% { opacity: .5; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.1); } }
+/* body collapses via the grid-rows trick — no JS height measuring */
+.thinking-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s cubic-bezier(.4,0,.2,1); }
+.thinking.open .thinking-wrap { grid-template-rows: 1fr; }
+.thinking-wrap { margin-top: 4px; }
+.thinking-body { color: var(--text-dim); font-size: 13.5px; line-height: 1.6; padding: 8px 12px; border-left: 2px solid var(--border); white-space: pre-wrap; overflow: hidden; min-height: 0; }
 
 /* ─── Tool cards ─── */
 .tool-card { width: 100%; border: 1px solid var(--border); border-radius: 11px; background: var(--bg-elev); margin: 6px 0; overflow: hidden; }
@@ -212,7 +230,12 @@ button:focus-visible, .fld:focus-visible, textarea:focus-visible, input:focus-vi
 @keyframes spin { to { transform: rotate(360deg); } }
 .tool-name { font-weight: 600; }
 .tool-summary { color: var(--text-faint); font-family: var(--mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left; }
-.tool-head .chev { color: var(--text-faint); display: inline-flex; align-items: center; }
+.tool-head .chev { color: var(--text-faint); display: inline-flex; align-items: center; transition: transform .25s ease; }
+.tool-card.open .tool-head .chev { transform: rotate(180deg); }
+/* result region expands via the grid-rows trick */
+.tool-wrap { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s cubic-bezier(.4,0,.2,1); }
+.tool-card.open .tool-wrap { grid-template-rows: 1fr; }
+.tool-inner { overflow: hidden; min-height: 0; }
 .tool-result { margin: 0; padding: 10px 12px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 12px; color: var(--text-dim); white-space: pre-wrap; max-height: 320px; overflow: auto; }
 
 .subagent { border-top: 1px solid var(--border); padding: 4px 12px 8px 24px; }
@@ -223,28 +246,30 @@ button:focus-visible, .fld:focus-visible, textarea:focus-visible, input:focus-vi
 .diff { border-top: 1px solid var(--border); }
 .diff-file { font-family: var(--mono); font-size: 12px; color: var(--text-dim); padding: 6px 12px; background: var(--bg-input); }
 .diff-body { margin: 0; padding: 6px 0; font-family: var(--mono); font-size: 12px; overflow-x: auto; }
-.diff-line { padding: 1px 12px; white-space: pre; }
+.diff-line { padding: 1px 12px; white-space: pre; animation: diffIn .28s ease both; }
+@keyframes diffIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 .diff-line .ln { display: inline-block; width: 40px; color: var(--text-faint); user-select: none; }
 .diff-line.add { background: rgba(46,160,67,.14); color: #7ee787; }
 .diff-line.del { background: rgba(248,81,73,.14); color: #ffa198; }
 
 /* ─── Composer ─── */
 /* ─── Home hero (empty / new state) ─── */
-.hero { flex: 1; display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 24px; }
-.hero-inner { width: 100%; max-width: 720px; display: flex; flex-direction: column; align-items: stretch; }
+.hero { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 24px; }
+.hero-inner { position: relative; z-index: 1; width: 100%; max-width: 720px; display: flex; flex-direction: column; align-items: stretch; }
 .hero-logo { align-self: center; margin-bottom: 18px; filter: drop-shadow(0 10px 26px rgba(0,0,0,.45)); }
 .hero-greeting { font-size: 29px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 22px; text-align: center; }
 .starter-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
-.starter-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 11px; color: var(--text-dim); font-size: 13px; padding: 8px 13px; }
-.starter-chip:hover { background: var(--bg-input); color: var(--text); border-color: #4a4945; }
+.starter-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 11px; color: var(--text-dim); font-size: 13px; padding: 8px 13px; transition: background .15s, color .15s, border-color .15s, transform .12s; animation: chipIn .45s cubic-bezier(.22,1,.36,1) both; }
+.starter-chip:hover { background: var(--bg-input); color: var(--text); border-color: #4a4945; transform: translateY(-1px); }
 .starter-chip svg { color: var(--accent); }
+@keyframes chipIn { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
 
 .composer-wrap { padding: 8px 24px 20px; max-width: 780px; width: 100%; margin: 0 auto; }
 .composer-wrap.composer-hero { padding: 0; width: 100%; max-width: 720px; }
 .composer-wrap.composer-hero .composer { border-radius: 20px; padding: 14px 16px 10px; box-shadow: 0 10px 34px rgba(0,0,0,.28); }
 .composer-wrap.composer-hero .composer-input { font-size: 16px; min-height: 52px; }
-.composer { background: var(--bg-input); border: 1px solid var(--border); border-radius: 18px; padding: 8px 10px 6px; }
-.composer:focus-within { border-color: #55534c; }
+.composer { background: var(--bg-input); border: 1px solid var(--border); border-radius: 18px; padding: 8px 10px 6px; transition: border-color .2s ease, box-shadow .3s ease; }
+.composer:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(201,100,66,.15), 0 0 26px -8px var(--accent); }
 .composer-input { width: 100%; background: none; border: none; outline: none; resize: none; color: var(--text); font-size: 15px; line-height: 1.5; padding: 6px 8px; max-height: 220px; }
 .composer-input::placeholder { color: var(--text-faint); }
 .composer-bar { display: flex; align-items: center; justify-content: space-between; padding: 2px 4px; }
@@ -266,14 +291,22 @@ button:focus-visible, .fld:focus-visible, textarea:focus-visible, input:focus-vi
 .model-empty { color: var(--text-faint); font-size: 12.5px; padding: 8px 9px; }
 .model-group { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); padding: 7px 9px 3px; }
 .model-group:not(:first-child) { border-top: 1px solid var(--border); margin-top: 4px; }
-.send { width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.send { position: relative; width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; }
 .send:hover:not(:disabled) { background: var(--accent-hover); }
 .send:disabled { opacity: .4; cursor: default; }
 .send.stop { background: var(--bg-elev); color: var(--text); }
+/* both icons stacked so the arrow can rotate/crossfade into the stop square */
+.send .ic { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; transition: opacity .2s ease, transform .3s cubic-bezier(.4,0,.2,1); }
+.send .ic-arrow { opacity: 1; transform: rotate(0) scale(1); }
+.send .ic-square { opacity: 0; transform: rotate(-90deg) scale(.4); }
+.send.stop .ic-arrow { opacity: 0; transform: rotate(90deg) scale(.4); }
+.send.stop .ic-square { opacity: 1; transform: rotate(0) scale(1); }
 
 .context-meter { display: flex; align-items: center; gap: 10px; padding: 8px 6px 0; }
 .meter-track { flex: 1; height: 4px; background: var(--bg-elev); border-radius: 3px; overflow: hidden; }
-.meter-fill { height: 100%; background: var(--accent); }
+.meter-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1), background .5s ease; }
+.meter-fill.warn { background: #e3b341; }
+.meter-fill.crit { background: var(--del); }
 .meter-label { font-size: 11.5px; color: var(--text-faint); }
 
 /* ─── Permission modal ─── */
@@ -427,3 +460,114 @@ select.fld { appearance: none; }
 .md-code-block { font-family: var(--mono); font-size: 12.5px; background: #1c1b1a; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; overflow-x: auto; margin: 10px 0; }
 .md-strong { font-weight: 650; }
 .md-spacer { height: 6px; }
+
+/* ══════════════════════ General / appearance (Settings ▸ General) ══════════════════════ */
+
+/* Light colour mode — overrides the dark :root variables. Everything that reads
+   var(--bg)/var(--text)/… flips automatically; only a few hardcoded darks below
+   need an explicit light value. Set on <html> as data-theme by theme.ts. */
+:root[data-theme="light"] {
+  --bg: #f7f6f2;
+  --bg-side: #efece5;
+  --bg-elev: #ffffff;
+  --bg-input: #ffffff;
+  --border: #e3dfd5;
+  --text: #23221f;
+  --text-dim: #5f5c54;
+  --text-faint: #8a877e;
+  --user-bubble: #eceae2;
+}
+:root[data-theme="light"] ::-webkit-scrollbar-thumb { background: #c9c5ba; }
+:root[data-theme="light"] .md-code-block { background: #f1efe8; }
+:root[data-theme="light"] .mode-tab.active { box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+/* Chat font — applies to message text only; code stays monospace. data-font on <html>. */
+.md, .user-bubble { font-family: var(--chat-font, var(--font)); }
+.md-code, .md-code-block { font-family: var(--mono); }
+:root[data-font="serif"] { --chat-font: "Iowan Old Style", "Palatino Linotype", Georgia, serif; }
+:root[data-font="mono"]  { --chat-font: var(--mono); }
+/* data-font="sans" leaves --chat-font unset → falls back to var(--font) */
+
+/* Reduce motion — always honour the OS setting; the toggle forces it on too. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+:root.reduce-motion *, :root.reduce-motion *::before, :root.reduce-motion *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* General panel bits */
+.panel-subhead { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 600; margin: 24px 0 10px; }
+.gen-instr { min-height: 120px; margin: 0; }
+
+/* ══════════════════════ Motion layer ══════════════════════ */
+/* Everything below animates transform/opacity only (compositor-friendly), and
+   is silenced by the prefers-reduced-motion / .reduce-motion blocks above. */
+
+/* ─── Reactive Sentinel mascot ─── */
+.sentinel { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.sentinel .halo { position: absolute; inset: -26%; border-radius: 50%; background: radial-gradient(circle, #37dbd0, transparent 65%); filter: blur(9px); opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+.sentinel > svg { position: relative; z-index: 1; display: block; }
+.mc-eye { transform-box: fill-box; transform-origin: center; transition: fill .3s ease; }
+.mc-eyes { transform-box: fill-box; transform-origin: center; }
+/* idle — slow breathing + occasional blink */
+.sentinel-idle > svg { animation: breathe 4.5s ease-in-out infinite; }
+.sentinel-idle .mc-eye { animation: blinkEye 4.8s ease-in-out infinite; }
+@keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+@keyframes blinkEye { 0%,42%,48%,100% { transform: scaleY(1); } 45% { transform: scaleY(.12); } }
+/* thinking / tool — glow halo pulse + eyes scan, quicker breathing */
+.sentinel-thinking .halo, .sentinel-tool .halo { opacity: .55; animation: haloPulse 1.5s ease-in-out infinite; }
+@keyframes haloPulse { 0%,100% { opacity: .5; } 50% { opacity: .9; } }
+.sentinel-thinking .mc-eyes, .sentinel-tool .mc-eyes { animation: scan 1.4s ease-in-out infinite; }
+@keyframes scan { 0%,100% { transform: translateX(-3px); } 50% { transform: translateX(3px); } }
+.sentinel-thinking > svg, .sentinel-tool > svg { animation: breathe 2s ease-in-out infinite; }
+/* streaming — steady bright glow */
+.sentinel-streaming .halo { opacity: .4; }
+.sentinel-streaming .mc-eye { fill: #7ff6ec; }
+/* error — red flash */
+.sentinel-error .mc-eye { fill: var(--del); }
+.sentinel-error .halo { opacity: .5; background: radial-gradient(circle, var(--del), transparent 65%); }
+
+/* ─── Shimmer status line (replaces the bouncing dots) ─── */
+.status-line { display: flex; align-items: center; gap: 9px; padding: 6px 2px; animation: rowIn .3s ease both; }
+.status-shimmer {
+  font-size: 13.5px; font-weight: 550;
+  background: linear-gradient(100deg, var(--text-faint) 35%, var(--accent-hover) 50%, var(--text-faint) 65%);
+  background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: shimmer 2.1s linear infinite;
+}
+@keyframes shimmer { to { background-position: -220% 0; } }
+
+/* ─── Home → chat content swap ─── */
+.chat-view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+/* ─── Ambient aurora behind the home hero (unmounts once a chat starts) ─── */
+.aurora { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.aurora b { position: absolute; border-radius: 50%; filter: blur(64px); mix-blend-mode: screen; }
+.aurora b:nth-child(1) { width: 42%; height: 60%; background: radial-gradient(circle, var(--accent), transparent 70%); top: -12%; left: -8%; opacity: .34; animation: drift1 16s ease-in-out infinite; }
+.aurora b:nth-child(2) { width: 40%; height: 56%; background: radial-gradient(circle, #37dbd0, transparent 70%); bottom: -16%; right: -6%; opacity: .20; animation: drift2 20s ease-in-out infinite; }
+.aurora b:nth-child(3) { width: 30%; height: 44%; background: radial-gradient(circle, var(--accent-hover), transparent 70%); top: 36%; left: 52%; opacity: .16; animation: drift3 18s ease-in-out infinite; }
+@keyframes drift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(8%,6%) scale(1.1); } }
+@keyframes drift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-7%,-5%) scale(1.15); } }
+@keyframes drift3 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-6%,7%) scale(.9); } }
+
+/* ─── Copy-code button ─── */
+.md-code-wrap { position: relative; }
+.md-copy { position: absolute; top: 8px; right: 8px; opacity: 0; background: var(--bg-elev); border: 1px solid var(--border); color: var(--text-dim); font-family: var(--font); font-size: 11px; padding: 3px 9px; border-radius: 7px; transition: opacity .15s ease, background .15s ease, color .15s ease; }
+.md-code-wrap:hover .md-copy, .md-copy:focus-visible { opacity: 1; }
+.md-copy:hover { background: var(--bg-input); color: var(--text); }
+.md-copy.done { color: #4ec98a; border-color: rgba(78,201,138,.4); opacity: 1; }
+
+/* ─── Modal entrance (permission + settings) ─── */
+.modal-backdrop { animation: fadeIn .18s ease both; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.perm-modal, .settings { animation: modalIn .28s cubic-bezier(.22,1,.36,1) both; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }

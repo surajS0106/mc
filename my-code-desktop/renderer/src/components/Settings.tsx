@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from "react";
 import type {
   ConnectorInfo, ConnectorEvent, DeviceCodePrompt, CustomMcpInput, McpToolInfo,
-  ModelSettings, AccountList, Permissions, PermEdit, SkillInfo, UsageSummary, ModelUsage,
+  ModelSettings, AccountList, Permissions, PermEdit, SkillInfo, UsageSummary, ModelUsage, Theme,
 } from "../../../electron/ipc";
-import { ACCENT_PRESETS, applyAccent, DEFAULT_ACCENT } from "../theme";
+import {
+  ACCENT_PRESETS, applyAccent, DEFAULT_ACCENT,
+  applyMode, applyFont, applyReduceMotion, DEFAULT_MODE, DEFAULT_FONT,
+} from "../theme";
 import { Icon, MicrosoftMark } from "./Icon";
 
 type Section = "general" | "theme" | "account" | "models" | "permissions" | "connectors" | "skills" | "usage" | "plugins";
 type Tab = "all" | "connected" | "not";
 
 export function Settings({ onClose }: { onClose: () => void }): React.ReactElement {
-  const [section, setSection] = useState<Section>("models");
+  const [section, setSection] = useState<Section>("general");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
@@ -42,7 +45,8 @@ export function Settings({ onClose }: { onClose: () => void }): React.ReactEleme
           {section === "permissions" && <PermissionsPanel />}
           {section === "skills" && <SkillsPanel />}
           {section === "usage" && <UsagePanel />}
-          {(section === "general" || section === "plugins") && <Stub name={section} />}
+          {section === "general" && <GeneralPanel />}
+          {section === "plugins" && <Stub name="plugins" />}
         </div>
       </div>
     </div>
@@ -210,6 +214,101 @@ function ConnectorRow({
         </div>
       )}
     </div>
+  );
+}
+
+// ─────────────────────────────── General ──────────────────────────────────
+function GeneralPanel(): React.ReactElement {
+  const [t, setT] = useState<Theme | null>(null);
+  const [name, setName] = useState("");
+  const [instr, setInstr] = useState("");
+  const [instrReady, setInstrReady] = useState(false);
+  const [savingInstr, setSavingInstr] = useState(false);
+  const [savedInstr, setSavedInstr] = useState(false);
+
+  useEffect(() => {
+    void window.mycode.getTheme().then((th) => { setT(th); setName(th.preferredName ?? ""); });
+    void window.mycode.getInstructions().then((s) => { setInstr(s); setInstrReady(true); });
+  }, []);
+
+  if (!t) return <Panel title="General"><div className="stub">Loading…</div></Panel>;
+
+  // Persist a partial patch (main.ts merges) and apply it live to the DOM.
+  const patch = (p: Partial<Theme>) => {
+    setT({ ...t, ...p });
+    void window.mycode.setTheme(p);
+    if (p.mode !== undefined) applyMode(p.mode ?? DEFAULT_MODE);
+    if (p.font !== undefined) applyFont(p.font ?? DEFAULT_FONT);
+    if (p.reduceMotion !== undefined) applyReduceMotion(p.reduceMotion);
+  };
+  const saveName = () => { if ((t.preferredName ?? "") !== name.trim()) patch({ preferredName: name.trim() }); };
+  const saveInstr = async () => {
+    setSavingInstr(true); setSavedInstr(false);
+    await window.mycode.setInstructions(instr);
+    setSavingInstr(false); setSavedInstr(true);
+    setTimeout(() => setSavedInstr(false), 1800);
+  };
+
+  const mode = t.mode ?? DEFAULT_MODE;
+  const font = t.font ?? DEFAULT_FONT;
+
+  return (
+    <Panel title="General">
+      <Field label="What should we call you?">
+        <input
+          className="fld"
+          placeholder="e.g. Rengaraj"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={saveName}
+          onKeyDown={(e) => { if (e.key === "Enter") saveName(); }}
+        />
+        <div className="hint">Used to greet you on the home screen.</div>
+      </Field>
+
+      <Field label="Instructions for the agent">
+        <textarea
+          className="skill-editor gen-instr"
+          placeholder="e.g. Respond concisely. Prefer TypeScript. I work at Synergech on internal tooling."
+          value={instr}
+          onChange={(e) => setInstr(e.target.value)}
+          spellCheck={false}
+          disabled={!instrReady}
+        />
+        <div className="row-inline" style={{ marginTop: 8 }}>
+          <button className="btn primary" onClick={saveInstr} disabled={savingInstr || !instrReady}>
+            {savingInstr ? "Saving…" : savedInstr ? "Saved ✓" : "Save instructions"}
+          </button>
+          <span className="hint">Stored in <code>~/.my-code/my-code.md</code> and added to the agent's system prompt on your next new chat.</span>
+        </div>
+      </Field>
+
+      <div className="panel-subhead">Preferences</div>
+
+      <Field label="Appearance">
+        <div className="seg">
+          <button className={mode === "system" ? "on" : ""} onClick={() => patch({ mode: "system" })}>System</button>
+          <button className={mode === "light" ? "on" : ""} onClick={() => patch({ mode: "light" })}>Light</button>
+          <button className={mode === "dark" ? "on" : ""} onClick={() => patch({ mode: "dark" })}>Dark</button>
+        </div>
+      </Field>
+
+      <Field label="Chat font">
+        <div className="seg">
+          <button className={font === "sans" ? "on" : ""} onClick={() => patch({ font: "sans" })}>Sans</button>
+          <button className={font === "serif" ? "on" : ""} onClick={() => patch({ font: "serif" })}>Serif</button>
+          <button className={font === "mono" ? "on" : ""} onClick={() => patch({ font: "mono" })}>Mono</button>
+        </div>
+        <div className="hint">Applies to message text. Code always stays monospace.</div>
+      </Field>
+
+      <label className="toggle-row" style={{ marginTop: 14 }}>
+        <input type="checkbox" checked={!!t.reduceMotion} onChange={(e) => patch({ reduceMotion: e.target.checked })} />
+        <span>Reduce motion — minimise streaming, spinner and loading animations (your OS setting is always honoured)</span>
+      </label>
+
+      <div className="hint" style={{ marginTop: 12 }}>Accent colour lives under <b>Theme</b>.</div>
+    </Panel>
   );
 }
 

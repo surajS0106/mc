@@ -9,13 +9,19 @@
  * actually emits.
  */
 
-import React from "react";
+import React, { useState } from "react";
 
 export interface MarkdownProps {
   content: string;
 }
 
-export function Markdown({ content }: MarkdownProps): React.ReactElement {
+/**
+ * Memoized so a streaming turn only re-parses the *live* message. Without this,
+ * every assistant delta re-rendered (and re-parsed) every prior bubble too.
+ */
+export const Markdown = React.memo(MarkdownImpl);
+
+function MarkdownImpl({ content }: MarkdownProps): React.ReactElement {
   const lines = content.split("\n");
   const blocks: React.ReactElement[] = [];
   let i = 0;
@@ -30,11 +36,7 @@ export function Markdown({ content }: MarkdownProps): React.ReactElement {
       );
       const stop = end === -1 ? lines.length : end;
       const code = lines.slice(i + 1, stop).join("\n");
-      blocks.push(
-        <pre key={key++} className="md-code-block">
-          {code}
-        </pre>
-      );
+      blocks.push(<CodeBlock key={key++} code={code} />);
       i = stop + 1;
       continue;
     }
@@ -107,6 +109,24 @@ export function Markdown({ content }: MarkdownProps): React.ReactElement {
     i++;
   }
   return <div className="md">{blocks}</div>;
+}
+
+/** Fenced code block with a hover copy button that confirms on click. */
+function CodeBlock({ code }: { code: string }): React.ReactElement {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    void navigator.clipboard?.writeText(code);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <div className="md-code-wrap">
+      <button className={`md-copy ${copied ? "done" : ""}`} onClick={copy} title="Copy code">
+        {copied ? "Copied" : "Copy"}
+      </button>
+      <pre className="md-code-block">{code}</pre>
+    </div>
+  );
 }
 
 /**

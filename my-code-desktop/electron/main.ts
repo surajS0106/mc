@@ -49,22 +49,31 @@ let mode: Mode = "chat";
 let projectCwd: string = homedir(); // chat mode default; code mode overrides via folder picker
 let startToken = 0; // guards against overlapping starts (StrictMode double-mount, rapid clicks)
 let yolo = false; // "skip all permissions" — loaded from prefs, passed to serve
-let theme: { accent?: string; accentHover?: string } = {};
+let theme: import("./ipc.js").Theme = {};
 let myCodeCli: string | undefined; // explicit path to the my-code CLI (prefs override)
 
 function prefsFile(): string {
   return join(homedir(), ".my-code-desktop", "prefs.json");
 }
+/** Global agent instructions file that `my-code serve` reads into its system prompt. */
+function instructionsFile(): string {
+  return join(homedir(), ".my-code", "my-code.md");
+}
 async function loadPrefs(): Promise<void> {
   try {
     const p = JSON.parse(await readFile(prefsFile(), "utf8")) as {
       yolo?: boolean;
-      accent?: string;
-      accentHover?: string;
       myCodeCli?: string;
-    };
+    } & import("./ipc.js").Theme;
     yolo = !!p.yolo;
-    theme = { accent: p.accent, accentHover: p.accentHover };
+    theme = {
+      accent: p.accent,
+      accentHover: p.accentHover,
+      mode: p.mode,
+      font: p.font,
+      reduceMotion: p.reduceMotion,
+      preferredName: p.preferredName,
+    };
     myCodeCli = p.myCodeCli;
   } catch {
     yolo = false;
@@ -587,11 +596,24 @@ function wireIpc(): void {
   // ── Settings: Usage ──
   ipcMain.handle(IPC.getUsage, () => store.aggregateUsage(Date.now()));
 
-  // ── Settings: Theme ──
+  // ── Settings: Theme / appearance ──
   ipcMain.handle(IPC.getTheme, () => theme);
-  ipcMain.handle(IPC.setTheme, async (_e, t: { accent?: string; accentHover?: string }) => {
-    theme = { accent: t.accent, accentHover: t.accentHover };
+  ipcMain.handle(IPC.setTheme, async (_e, t: import("./ipc.js").Theme) => {
+    theme = { ...theme, ...t }; // merge: panels send partial patches (accent vs mode/font/…)
     await savePrefs();
+  });
+
+  // ── Settings: global agent instructions (~/.my-code/my-code.md) ──
+  ipcMain.handle(IPC.getInstructions, async () => {
+    try {
+      return await readFile(instructionsFile(), "utf8");
+    } catch {
+      return "";
+    }
+  });
+  ipcMain.handle(IPC.setInstructions, async (_e, text: string) => {
+    await mkdir(join(homedir(), ".my-code"), { recursive: true });
+    await writeFile(instructionsFile(), text ?? "", "utf8");
   });
 
   ipcMain.on(IPC.windowMinimize, () => win?.minimize());

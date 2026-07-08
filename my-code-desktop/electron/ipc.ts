@@ -207,9 +207,22 @@ export interface UsageSummary {
   all: ModelUsage[];
   sessionCount: number;
 }
+/** Appearance colour mode. "system" follows the OS `prefers-color-scheme`. */
+export type ThemeMode = "system" | "light" | "dark";
+/** Font family applied to chat message text (code always stays monospace). */
+export type ChatFont = "sans" | "serif" | "mono";
+
+/**
+ * Appearance + identity preferences, persisted in ~/.my-code-desktop/prefs.json.
+ * (Historically just the accent colour — now the whole "General/Theme" bag.)
+ */
 export interface Theme {
   accent?: string;
   accentHover?: string;
+  mode?: ThemeMode;
+  font?: ChatFont;
+  reduceMotion?: boolean;
+  preferredName?: string;
 }
 
 export interface Bootstrap {
@@ -261,6 +274,8 @@ export const IPC = {
   getUsage: "mc:get-usage",
   getTheme: "mc:get-theme",
   setTheme: "mc:set-theme",
+  getInstructions: "mc:get-instructions",
+  setInstructions: "mc:set-instructions",
   windowMinimize: "mc:window-minimize",
   windowToggleMaximize: "mc:window-toggle-maximize",
   windowClose: "mc:window-close",
@@ -311,6 +326,9 @@ export interface McApi {
   getUsage(): Promise<UsageSummary>;
   getTheme(): Promise<Theme>;
   setTheme(theme: Theme): Promise<void>;
+  /** Global agent instructions — reads/writes ~/.my-code/my-code.md (applied on next new chat). */
+  getInstructions(): Promise<string>;
+  setInstructions(text: string): Promise<void>;
   windowMinimize(): void;
   windowToggleMaximize(): void;
   windowClose(): void;

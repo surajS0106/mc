@@ -1,26 +1,37 @@
 import React, { useId } from "react";
 
+/** Reactive states that drive the mascot's eyes, glow halo, and breathing. */
+export type MascotMood = "idle" | "thinking" | "streaming" | "tool" | "error";
+
 /**
  * The my-code "Sentinel" mark — a cyber-dog head in a terracotta helmet wearing
  * over-ear headphones: a contained visor band with a glowing cyan scan slit,
  * antenna fins, and side ear-cups on a headband. Inline SVG so it stays crisp
  * and animatable. `tile` draws the dark rounded app-icon background.
+ *
+ * When `mood` is set the mark becomes reactive: it's wrapped in a `.sentinel`
+ * shell with a glow halo, and CSS drives its eyes/breathing from the mood class
+ * (idle = breathe + blink, thinking/tool = scan + halo, streaming = steady glow,
+ * error = red flash). All motion is transform/opacity only, so it stays on the
+ * compositor and costs nothing on the main thread. Omit `mood` for a static mark.
  */
 export function Logo({
   size = 32,
   tile = false,
   className,
+  mood,
 }: {
   size?: number;
   tile?: boolean;
   className?: string;
+  mood?: MascotMood;
 }): React.ReactElement {
   const uid = useId().replace(/:/g, "");
   const fur = `fur-${uid}`;
   const glow = `glow-${uid}`;
-  return (
+  const svg = (
     <svg
-      className={className}
+      className={mood ? undefined : className}
       width={size}
       height={size}
       viewBox="0 0 120 120"
@@ -54,25 +65,36 @@ export function Logo({
       {/* head */}
       <rect x="33" y="31" width="54" height="60" rx="24" fill={`url(#${fur})`} />
 
-      {/* goggles + two eyes */}
+      {/* goggles + two eyes (grouped so the mood CSS can scan them together) */}
       <rect x="37" y="50" width="46" height="19" rx="9.5" fill="#141210" />
       <rect x="37" y="50" width="46" height="19" rx="9.5" fill="none" stroke="#2a2724" strokeWidth="1" />
-      <g filter={`url(#${glow})`}>
+      <g className="mc-eyes" filter={`url(#${glow})`}>
         <circle className="mc-eye" cx="50" cy="59.5" r="4.6" fill="#37dbd0" />
         <circle className="mc-eye" cx="70" cy="59.5" r="4.6" fill="#37dbd0" />
+        <circle cx="48" cy="57.5" r="1.5" fill="#eafffb" />
+        <circle cx="68" cy="57.5" r="1.5" fill="#eafffb" />
       </g>
-      <circle cx="48" cy="57.5" r="1.5" fill="#eafffb" />
-      <circle cx="68" cy="57.5" r="1.5" fill="#eafffb" />
 
       {/* ear cups */}
       <rect x="15" y="48" width="20" height="30" rx="9" fill="#3d424a" />
       <rect x="19" y="52" width="12" height="22" rx="6" fill="#22262b" />
       <rect x="85" y="48" width="20" height="30" rx="9" fill="#3d424a" />
       <rect x="89" y="52" width="12" height="22" rx="6" fill="#22262b" />
-      <g filter={`url(#${glow})`}>
+      <g className="mc-leds" filter={`url(#${glow})`}>
         <rect x="22" y="61" width="6" height="4" rx="2" fill="#37dbd0" />
         <rect x="92" y="61" width="6" height="4" rx="2" fill="#37dbd0" />
       </g>
     </svg>
+  );
+
+  if (!mood) return svg;
+  return (
+    <span
+      className={`sentinel sentinel-${mood} ${className ?? ""}`}
+      style={{ width: size, height: size }}
+    >
+      <span className="halo" aria-hidden="true" />
+      {svg}
+    </span>
   );
 }

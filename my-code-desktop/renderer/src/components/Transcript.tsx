@@ -17,21 +17,28 @@ export interface TranscriptProps {
 export function Transcript({ items, mode, busy, mood }: TranscriptProps): React.ReactElement {
   const endRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const prevLen = useRef(0);
 
   // Auto-scroll only when the user is already near the bottom, so scrolling up
   // to read older messages during a stream doesn't yank the view back down.
+  // Smooth-scroll only when a *new* item arrives; token deltas jump instantly so
+  // rapid streaming never fights an in-flight smooth animation.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-    if (nearBottom) endRef.current?.scrollIntoView({ block: "end" });
+    if (nearBottom) {
+      const isNewItem = items.length !== prevLen.current;
+      endRef.current?.scrollIntoView({ block: "end", behavior: isNewItem ? "smooth" : "auto" });
+    }
+    prevLen.current = items.length;
   }, [items]);
 
   if (items.length === 0) {
     return (
       <div className="transcript empty">
         <div className="home">
-          <Logo size={76} tile className="home-logo" />
+          <Logo size={76} tile className="home-logo" mood="idle" />
           <div className="home-title">
             {mode === "code" ? "What should my-code build?" : "How can I help?"}
           </div>
@@ -52,8 +59,9 @@ export function Transcript({ items, mode, busy, mood }: TranscriptProps): React.
           <Row key={it.id} it={it} />
         ))}
         {busy && mood === "thinking" && (
-          <div className="working">
-            <span className="dot" /> <span className="dot" /> <span className="dot" />
+          <div className="status-line">
+            <Logo size={22} mood="thinking" />
+            <span className="status-shimmer">Thinking…</span>
           </div>
         )}
         <div ref={endRef} />
@@ -62,7 +70,10 @@ export function Transcript({ items, mode, busy, mood }: TranscriptProps): React.
   );
 }
 
-function Row({ it }: { it: Item }): React.ReactElement | null {
+// Memoized so a streaming turn only re-renders the item that actually changed.
+// App's reducers preserve object identity for untouched items, so shallow-equal
+// props let every prior row skip re-render while the last one streams.
+const Row = React.memo(function Row({ it }: { it: Item }): React.ReactElement | null {
   switch (it.kind) {
     case "user":
       return (
@@ -92,7 +103,7 @@ function Row({ it }: { it: Item }): React.ReactElement | null {
     default:
       return null;
   }
-}
+});
 
 function ThinkingBlock({
   text,
@@ -111,13 +122,13 @@ function ThinkingBlock({
       : "Thought";
   return (
     <div className="row assistant">
-      <div className="thinking">
-        <button className="thinking-head" onClick={() => setOpen((o) => !o)}>
+      <div className={`thinking ${open ? "open" : ""}`}>
+        <button className={`thinking-head ${streaming ? "live" : ""}`} onClick={() => setOpen((o) => !o)}>
           <span className="spark"><Icon name="sparkle" size={13} /></span>
-          {label}
-          <span className="chev"><Icon name={open ? "chevronUp" : "chevronDown"} size={13} /></span>
+          <span className="lab">{label}</span>
+          <span className="chev"><Icon name="chevronDown" size={13} /></span>
         </button>
-        {open && <div className="thinking-body">{text}</div>}
+        <div className="thinking-wrap"><div className="thinking-body">{text}</div></div>
       </div>
     </div>
   );

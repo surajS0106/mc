@@ -8,15 +8,16 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { TitleBar } from "./components/TitleBar";
 import { Sidebar } from "./components/Sidebar";
 import { Composer } from "./components/Composer";
 import { Transcript } from "./components/Transcript";
 import { PermissionModal } from "./components/PermissionModal";
 import { Settings } from "./components/Settings";
-import { Logo } from "./components/Logo";
+import { Logo, type MascotMood } from "./components/Logo";
 import { Icon, type IconName } from "./components/Icon";
-import { applyAccent } from "./theme";
+import { applyAccent, applyAppearance } from "./theme";
 import type {
   Bootstrap,
   EngineEvent,
@@ -43,6 +44,7 @@ export function App(): React.ReactElement {
   const [convTitle, setConvTitle] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [preferredName, setPreferredName] = useState<string>("");
   const [seed, setSeed] = useState<string>("");
   const seenPerm = useRef<Set<string>>(new Set());
   const booted = useRef(false);
@@ -51,17 +53,27 @@ export function App(): React.ReactElement {
     void window.mycode.listSessions().then(setSessions).catch(() => {});
   }, []);
 
+  // Pull appearance + identity prefs and apply them to <html>. Re-run when the
+  // settings modal closes so changes reflect without a restart.
+  const syncAppearance = useCallback(() => {
+    void window.mycode.getTheme().then((t) => {
+      applyAccent(t.accent, t.accentHover);
+      applyAppearance(t);
+      setPreferredName(t.preferredName ?? "");
+    }).catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (booted.current) return; // fire once even under StrictMode double-mount
     booted.current = true;
-    void window.mycode.getTheme().then((t) => applyAccent(t.accent, t.accentHover)).catch(() => {});
+    syncAppearance();
     void (async () => {
       const b = await window.mycode.bootstrap();
       setBoot(b);
       setMode(b.mode);
       refreshSessions();
     })();
-  }, [refreshSessions]);
+  }, [refreshSessions, syncAppearance]);
 
   // Reduce backend events into the transcript.
   useEffect(() => {
@@ -116,10 +128,17 @@ export function App(): React.ReactElement {
           setItems((xs) => [...xs, { kind: "notice", id: newId(), tone: ev.tone, text: ev.message }]);
           return;
         case "backend_error":
+          // A backend error ends the turn — stop the "thinking" indicator so the
+          // mascot/shimmer don't hang forever waiting for a state:idle that a
+          // failed request never sends.
           setItems((xs) => [...xs, { kind: "notice", id: newId(), tone: "error", text: ev.message }]);
+          setBusy(false);
+          setMood("idle");
           return;
         case "turn_end":
           setItems((xs) => clearStreaming(xs));
+          setBusy(false);
+          setMood("idle");
           refreshSessions();
           return;
       }
@@ -202,7 +221,12 @@ export function App(): React.ReactElement {
 
   return (
     <div className="app">
-      <TitleBar mode={mode} onMode={switchMode} onToggleSidebar={() => setSidebarOpen((s) => !s)} />
+      <TitleBar
+        mode={mode}
+        onMode={switchMode}
+        onToggleSidebar={() => setSidebarOpen((s) => !s)}
+        mood={busy ? (mood as MascotMood) : undefined}
+      />
       <div className={`app-body ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
         <Sidebar
           boot={boot}
@@ -222,50 +246,71 @@ export function App(): React.ReactElement {
             {boot?.cwd && <span className="cwd-chip" title={boot.cwd}>{shorten(boot.cwd)}</span>}
           </div>
 
-          {items.length === 0 ? (
-            <div className="hero">
-              <div className="hero-inner">
-                <Logo size={60} tile className="hero-logo" />
-                <h1 className="hero-greeting">{greeting(mode)}</h1>
+          <AnimatePresence mode="wait" initial={false}>
+            {items.length === 0 ? (
+              <motion.div
+                key="hero"
+                className="hero"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, y: -18, scale: 0.985 }}
+                transition={{ type: "spring", stiffness: 320, damping: 32, mass: 0.7 }}
+              >
+                <div className="aurora" aria-hidden="true"><b /><b /><b /></div>
+                <div className="hero-inner">
+                  <Logo size={60} tile className="hero-logo" mood={busy ? (mood as MascotMood) : "idle"} />
+                  <h1 className="hero-greeting">{greeting(mode, preferredName)}</h1>
+                  <Composer
+                    mode={mode}
+                    model={boot?.model ?? "…"}
+                    busy={busy}
+                    tokens={tokens}
+                    contextLength={boot?.contextLength}
+                    variant="hero"
+                    seed={seed}
+                    onSubmit={submit}
+                    onAbort={() => void window.mycode.abort()}
+                  />
+                  <div className="starter-chips">
+                    {starterChips(mode).map((c, i) => (
+                      <button
+                        key={c.label}
+                        className="starter-chip"
+                        style={{ animationDelay: `${0.12 + i * 0.07}s` }}
+                        onClick={() => setSeed(c.prompt + " ")}
+                      >
+                        <Icon name={c.icon} size={15} /> {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="chat"
+                className="chat-view"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.7, delay: 0.04 }}
+              >
+                <Transcript items={items} mode={mode} busy={busy} mood={mood} greeting={preferredName} />
                 <Composer
                   mode={mode}
                   model={boot?.model ?? "…"}
                   busy={busy}
                   tokens={tokens}
                   contextLength={boot?.contextLength}
-                  variant="hero"
-                  seed={seed}
+                  variant="docked"
                   onSubmit={submit}
                   onAbort={() => void window.mycode.abort()}
                 />
-                <div className="starter-chips">
-                  {starterChips(mode).map((c) => (
-                    <button key={c.label} className="starter-chip" onClick={() => setSeed(c.prompt + " ")}>
-                      <Icon name={c.icon} size={15} /> {c.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              <Transcript items={items} mode={mode} busy={busy} mood={mood} greeting={firstName(boot)} />
-              <Composer
-                mode={mode}
-                model={boot?.model ?? "…"}
-                busy={busy}
-                tokens={tokens}
-                contextLength={boot?.contextLength}
-                variant="docked"
-                onSubmit={submit}
-                onAbort={() => void window.mycode.abort()}
-              />
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
       </div>
       {perm && <PermissionModal req={perm} cwd={boot?.cwd ?? null} onAnswer={answer} />}
-      {settingsOpen && <Settings onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <Settings onClose={() => { setSettingsOpen(false); syncAppearance(); }} />}
     </div>
   );
 }
@@ -383,19 +428,16 @@ function historyToItems(messages: HistoryMessage[]): Item[] {
   return items;
 }
 
-function firstName(_b: Bootstrap | null): string {
-  return ""; // account name isn't surfaced by the backend yet
-}
-
-/** Time-aware, mode-aware greeting for the home hero. */
-function greeting(mode: Mode): string {
+/** Time-aware, mode-aware greeting for the home hero, personalised if a name is set. */
+function greeting(mode: Mode, name?: string): string {
   const h = new Date().getHours();
   const time =
     h >= 5 && h < 12 ? "Good morning" :
     h >= 12 && h < 17 ? "Good afternoon" :
     h >= 17 && h < 21 ? "Good evening" :
     "Burning the midnight oil";
-  return mode === "code" ? `${time} — what are we building?` : `${time}. How can I help?`;
+  const who = name?.trim() ? `, ${name.trim().split(/\s+/)[0]}` : "";
+  return mode === "code" ? `${time}${who} — what are we building?` : `${time}${who}. How can I help?`;
 }
 
 interface Starter { label: string; prompt: string; icon: IconName }

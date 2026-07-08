@@ -63,6 +63,7 @@ export function Composer({
 
   const used = tokens.prompt ?? 0;
   const pct = contextLength ? Math.min(100, Math.round((used / contextLength) * 100)) : null;
+  const level = pct === null ? "ok" : pct >= 90 ? "crit" : pct >= 70 ? "warn" : "ok";
 
   return (
     <div className={`composer-wrap composer-${variant}`}>
@@ -88,22 +89,24 @@ export function Composer({
           </div>
           <div className="composer-right">
             <ModelPicker current={model} />
-            {busy ? (
-              <button className="send stop" onClick={onAbort} title="Stop">
-                <Icon name="stop" size={14} />
-              </button>
-            ) : (
-              <button className="send" onClick={send} title="Send" disabled={!text.trim()}>
-                <Icon name="send" size={17} />
-              </button>
-            )}
+            {/* One persistent button so the arrow can morph into the stop square. */}
+            <button
+              className={`send ${busy ? "stop" : ""}`}
+              onClick={busy ? onAbort : send}
+              title={busy ? "Stop" : "Send"}
+              disabled={!busy && !text.trim()}
+              aria-label={busy ? "Stop" : "Send"}
+            >
+              <span className="ic ic-arrow"><Icon name="send" size={17} /></span>
+              <span className="ic ic-square"><Icon name="stop" size={14} /></span>
+            </button>
           </div>
         </div>
       </div>
       {pct !== null && variant === "docked" && (
         <div className="context-meter">
           <div className="meter-track">
-            <div className="meter-fill" style={{ width: `${pct}%` }} />
+            <div className={`meter-fill ${level}`} style={{ width: `${pct}%` }} />
           </div>
           <span className="meter-label">{pct}% context · {used.toLocaleString()} tokens</span>
         </div>
