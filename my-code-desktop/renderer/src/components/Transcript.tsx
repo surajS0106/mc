@@ -20,7 +20,7 @@ export interface TranscriptProps {
   onOpenSettings: () => void;
 }
 
-export function Transcript({ items, mode, busy, mood, onRetry, onEdit, onOpenSettings }: TranscriptProps): React.ReactElement {
+export function Transcript({ items, busy, mood, onRetry, onEdit, onOpenSettings }: TranscriptProps): React.ReactElement {
   const endRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const prevLen = useRef(0);
@@ -39,24 +39,6 @@ export function Transcript({ items, mode, busy, mood, onRetry, onEdit, onOpenSet
     }
     prevLen.current = items.length;
   }, [items]);
-
-  if (items.length === 0) {
-    return (
-      <div className="transcript empty">
-        <div className="home">
-          <Logo size={76} tile className="home-logo" mood="idle" />
-          <div className="home-title">
-            {mode === "code" ? "What should my-code build?" : "How can I help?"}
-          </div>
-          <div className="home-sub">
-            {mode === "code"
-              ? "Full coding agent — reads, edits, runs commands in your project."
-              : "Ask anything. Chat mode keeps to read-only tools."}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="transcript" ref={scrollRef}>
@@ -108,12 +90,14 @@ const Row = React.memo(function Row({ it, onRetry, onEdit, onOpenSettings }: Row
             <Markdown content={it.text} />
             {it.streaming && <span className="caret" />}
           </div>
-          {!it.streaming && (
-            <div className="msg-actions">
-              <CopyBtn text={it.text} />
-              <ActBtn icon="retry" label="Retry" onClick={onRetry} />
-            </div>
-          )}
+          <div className="msg-actions">
+            {!it.streaming && (
+              <>
+                <CopyBtn text={it.text} />
+                <ActBtn icon="retry" label="Retry" onClick={onRetry} />
+              </>
+            )}
+          </div>
         </div>
       );
     case "thinking":

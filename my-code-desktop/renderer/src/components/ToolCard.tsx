@@ -40,7 +40,7 @@ function ToolCardImpl({ it }: { it: ToolItem }): React.ReactElement {
 
   return (
     <div className={`tool-card ${status} ${open ? "open" : ""}`}>
-      <button className="tool-head" onClick={() => setOpen((o) => !o)}>
+      <button className={`tool-head ${hasResult ? "" : "static"}`} onClick={hasResult ? () => setOpen((o) => !o) : undefined}>
         <span className={`tool-tile ${visual.cls} ${it.isError ? "err" : ""}`}>
           {it.running ? (
             <Icon name="spinner" size={13} className="icon-spin" />

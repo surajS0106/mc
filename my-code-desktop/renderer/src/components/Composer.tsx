@@ -91,28 +91,28 @@ export function Composer({
 
   return (
     <div className={`composer-wrap composer-${variant}`}>
-      {showSlash && skillHits.length > 0 && (
-        <div className="cpop">
-          <div className="cpop-label">Skills &amp; commands</div>
-          {skillHits.map((s) => (
-            <button key={s.name} className="cpop-item" onMouseDown={(e) => { e.preventDefault(); pickSkill(s.name); }}>
-              <span className="cpop-cmd">/{s.name}</span>
-              <span className="cpop-desc">{s.description}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {showAt && fileHits.length > 0 && (
-        <div className="cpop">
-          <div className="cpop-label">Files</div>
-          {fileHits.map((f) => (
-            <button key={f} className="cpop-item" onMouseDown={(e) => { e.preventDefault(); pickFile(f); }}>
-              <span className="cpop-file">{f}</span>
-            </button>
-          ))}
-        </div>
-      )}
       <div className="composer">
+        {showSlash && skillHits.length > 0 && (
+          <div className="cpop">
+            <div className="cpop-label">Skills &amp; commands</div>
+            {skillHits.map((s) => (
+              <button key={s.name} className="cpop-item" onMouseDown={(e) => { e.preventDefault(); pickSkill(s.name); }}>
+                <span className="cpop-cmd">/{s.name}</span>
+                <span className="cpop-desc">{s.description}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {showAt && fileHits.length > 0 && (
+          <div className="cpop">
+            <div className="cpop-label">Files</div>
+            {fileHits.map((f) => (
+              <button key={f} className="cpop-item" onMouseDown={(e) => { e.preventDefault(); pickFile(f); }}>
+                <span className="cpop-file">{f}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <textarea
           ref={ref}
           className="composer-input"

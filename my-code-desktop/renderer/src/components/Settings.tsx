@@ -24,7 +24,6 @@ export function Settings({ onClose }: { onClose: () => void }): React.ReactEleme
       <div className="settings" onClick={(e) => e.stopPropagation()}>
         <button className="settings-close" onClick={onClose} title="Close (Esc)"><Icon name="close" size={16} /></button>
         <nav className="settings-nav">
-          <input className="settings-search" placeholder="Search" disabled />
           <div className="nav-group-label">Settings</div>
           <NavItem label="General" on={section === "general"} onClick={() => setSection("general")} />
           <NavItem label="Theme" on={section === "theme"} onClick={() => setSection("theme")} />
