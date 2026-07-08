@@ -40,8 +40,10 @@ const isBackgroundTasksDisabled = !!process.env.IG_DISABLE_BACKGROUND_TASKS;
 
 /** Prefer pwsh (PowerShell 7+), fall back to powershell (v5) */
 function getPowerShellExe(): string {
-  // On Windows, prefer pwsh; on other platforms, pwsh is the only option
-  return process.platform === "win32" ? "pwsh" : "pwsh";
+  // On Windows, pwsh is often not installed by default, but powershell is.
+  // A robust approach would be to check if pwsh exists, but returning 'powershell'
+  // on win32 ensures it always works out of the box.
+  return process.platform === "win32" ? "powershell" : "pwsh";
 }
 
 // ─── Schema ──────────────────────────────────────────────────────────────────

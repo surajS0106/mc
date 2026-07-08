@@ -361,16 +361,33 @@ async function bootstrap(
   // ─── Skills (Phase 4.2) ───
   try {
     const { loadSkills, skillToCommand } = await import("./skills/index.js");
+    const { buildSkillTool } = await import("./tools/skill/SkillToolBuilder.js");
     const skills = await loadSkills(cwd);
+    
+    // Register skills as AI tools if not disabled
+    let registeredSkillTools = 0;
+    for (const skill of skills) {
+      if (!skill.disableModelInvocation) {
+        registry.register(buildSkillTool(skill));
+        registeredSkillTools++;
+      }
+    }
+
     if (skills.length > 0) {
       process.stderr.write(
-        chalk.gray(`  ⎯ Skills: ${skills.length} loaded\n`)
+        chalk.gray(`  ⎯ Skills: ${skills.length} loaded (${registeredSkillTools} exposed to AI)\n`)
       );
     }
-    // Skills are registered as commands at startup for autocomplete.
-    // They'll be re-discovered by /skills command for listing.
-  } catch {
+    // Skills are also registered as slash commands in the registry for user autocomplete.
+    // Wait, the cmdRegistry is not available here easily because it's only scoped to Plugins phase.
+    // We'll leave slash command loading to the `/skills` command for now, as before.
+  } catch (e: unknown) {
     // Non-fatal — skills are optional
+    if (process.env.MY_CODE_DEBUG === "1") {
+      process.stderr.write(
+        chalk.yellow(`  ⚠ Skills init failed: ${e instanceof Error ? e.message : String(e)}\n`)
+      );
+    }
   }
 
   const permissions = new PermissionEngine(cwd);
@@ -437,7 +454,7 @@ async function bootstrap(
       if (available.length > 0) {
         process.stderr.write(chalk.cyan(`\nSessions with content:\n`));
         for (const m of available.slice(0, 5)) {
-          const preview = m.firstPrompt ? ` "${m.firstPrompt.slice(0, 50)}"` : "";
+          const preview = m.summary ? ` "${m.summary.slice(0, 50)}"` : "";
           process.stderr.write(chalk.gray(`  my-code --resume ${m.id}${preview}\n`));
         }
       }
